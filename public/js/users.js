@@ -16,7 +16,8 @@ async function fetchMessage(id) {
     } catch (err) {
         console.error(err);
     }
-}
+};
+
 async function getChatID(item) {
   const resUser = await fetch("/api/v1/me");
   const userID = await resUser.json();
@@ -46,7 +47,6 @@ async function getUsers() {
         usersCNT.innerHTML = '';
 
         users.data.forEach(async(user) => {
-            // const chatID  = await getChatID(user)
             // Create a container for each user
             const userDiv = document.createElement('div');
             userDiv.className = 'green';
@@ -60,7 +60,9 @@ async function getUsers() {
             // Attach click listener to this button
             const button = userDiv.querySelector('button');
             button.addEventListener('click', async() => {
-                fetchMessage(chatID);
+                const chatID = await getChatID(user)
+                await fetchMessage(chatID);
+                window.location.href = "/chat/"+user._id
             });
 
             // Append the user div to the container
@@ -74,3 +76,8 @@ async function getUsers() {
 
 
 getUsers();
+
+
+setInterval(()=>{
+    getUsers()
+}, 3000)
