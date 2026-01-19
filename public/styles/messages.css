@@ -38,6 +38,9 @@
     font-size: 22px;
     line-height: 40px;
 }
+#empty-msg{
+    border: 2px solid grey;
+}
 
 #pm-messages {
     border: 1px solid grey;

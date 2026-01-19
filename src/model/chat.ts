@@ -10,17 +10,30 @@ export interface IChat extends Document {
   updatedAt: Date;
 }
 
+
 const chatSchema = new Schema<IChat>({
   participants: [{
     type: Schema.Types.ObjectId,
     ref: 'User',
     required: true,
-    minlength: 2  // At least 2 users
+    minlength: 2, // At least 2 users
+    validate:{
+      validator: function(v: mongoose.Types.ObjectId[]){
+        // 1. Check length
+        if (v.length < 2) return false;
+        
+        // 2. Optional: Check for duplicates (ensure user didn't add themselves twice)
+        const uniqueParticipants = new Set(v.map(id => id.toString()));
+        return uniqueParticipants.size === v.length;
+      },
+      message:'A chat must have at least 2 participants.'
+    }
   }],
   isGroup: { type: Boolean, default: false },
   groupName: { type: String },
   lastMessage: { type: Schema.Types.ObjectId, ref: 'Message' }
 }, { timestamps: true });
+
 
 // Compound index for fast lookup of conversations for a user
 chatSchema.index({ participants: 1 });

@@ -6,6 +6,7 @@ import jwt from "jsonwebtoken";
 import bcrypt from "bcrypt"
 import Message from "../model/messages.ts";
 import Chat from "../model/chat.ts";
+import mongoose from "mongoose";
 
 export const postUser = async (req: Request, res: Response) => {
     try {
@@ -109,13 +110,48 @@ export const getLogin = (req: Request, res: Response) => {
 export const getChats = async(req:Request, res:Response)=>{
     try {
       const decoded = jwt.verify(req.cookies.token, process.env.JWT_SECRET!) as { id: string };
-      const userID = decoded.id;
-      const chats = await Chat.find({
-        participants: { $in: [userID] }
-      })
+      const userID = new mongoose.Types.ObjectId(decoded.id)
+
+      // 1. get all chats
+      const chats = await Chat.aggregate([
+        { $match: { participants: userID } },
+        {
+         $lookup: {
+            from:"messages",
+            let: { chatId: "$_id" },
+            pipeline:[
+              {
+                $match:{
+                  $expr:{
+                    $and:[
+                      {$eq: ["$chat", "$$chatId"] },
+                      {$ne:["$sender", userID]},
+                      {$not: {$in:[userID, "$readBy.user"]}}
+                    ]
+                  }
+                }
+              }
+            ],
+            as: "unreadMessages"
+          }
+        },
+
+      {
+        $addFields: {
+          unreadCount: { $size: "$unreadMessages" }
+        }
+      },
+        { $project: { unreadMessages: 0 } },
+
+        { $sort: { updatedAt: -1 } }
+      ])
+
+      
+      
       res.json({
         data:chats
-      })
+      });
+
     } catch (error) {
         res.status(500).json({
             status:'fail',
@@ -155,7 +191,7 @@ export const getMe = (req:Request, res:Response)=>{
 export const getMessages = async(req:Request, res:Response)=>{
     try {
       const decoded = jwt.verify(req.cookies.token, process.env.JWT_SECRET!) as { id: string };
-      const userID = decoded.id;
+      const userID = new mongoose.Types.ObjectId(decoded.id)
       const messages = await Message.find({
         chat: {
           $in: await Chat.find({ participants: userID }).distinct("_id")
@@ -178,7 +214,7 @@ export const getMessages = async(req:Request, res:Response)=>{
 export const createChat = async (req: Request, res: Response) => {
   const { id } = req.params;
   const decoded = jwt.verify(req.cookies.token, process.env.JWT_SECRET!) as { id: string };
-  const userID = decoded.id;
+  const userID = new mongoose.Types.ObjectId(decoded.id)
 
   try {
 
@@ -217,6 +253,7 @@ export const postMessage = async (req: Request, res: Response) => {
       sender: userID,
       text: req.body.message // Make sure app.use(express.json()) is in your server.js
     });
+    await Chat.findByIdAndUpdate(chatId, {lastMessage:newMessage, updatedAt: new Date()}, {new:true, runValidators:true});
 
     // 3. Return the new message as JSON (Better than redirect for Chat Apps)
     res.status(201).json({ success: true, data: newMessage });
@@ -227,7 +264,7 @@ export const postMessage = async (req: Request, res: Response) => {
   }
 }
 
-export const getMessage = async(req: Request, res: Response)=>{
+export const getAllMessages = async(req: Request, res: Response)=>{
   const allMessagesPM = await Message.find({
     chat:{
       $in: await Chat.find({_id:req.params.id})
@@ -237,4 +274,21 @@ export const getMessage = async(req: Request, res: Response)=>{
   res.json({
     data:allMessagesPM,
   });
+}
+
+export const getMessage = async(req: Request, res: Response)=>{
+  const chatId = req.params.id;
+  const decoded = jwt.verify(req.cookies.token, process.env.JWT_SECRET!) as { id: string };
+  const userID = new mongoose.Types.ObjectId(decoded.id)
+  
+  await Message.updateMany(
+        { 
+            chat: chatId, 
+            "readBy.user": { $ne: userID } 
+        },
+        { 
+            $push: { readBy: { user: userID, readAt: new Date() } } 
+        }
+    );
+  res.status(200).sendFile(path.join(__dirname, '../pages/message.html'))
 }

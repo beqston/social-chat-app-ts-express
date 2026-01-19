@@ -3,7 +3,7 @@ import path from "path";
 import User from "../model/user.ts";
 import isAuthUser, { tokenExpires } from "../middleware/auth.ts";
 import userValidation from "../utils/userValidation.ts";
-import { getChats, getLogin, getMe, getMessage, getMessages, getUsers, logout, postMessage, postLogin, postUser, createChat } from "../controlers/userControlers.ts";
+import { getChats, getLogin, getMe, getMessage, getMessages, getUsers, logout, postMessage, postLogin, postUser, createChat, getAllMessages } from "../controlers/userControlers.ts";
 import jwt from "jsonwebtoken"
 import isActive from "../middleware/isActive.ts";
 import bcrypt from "bcrypt"
@@ -82,10 +82,7 @@ router.get('/register', (req: Request, res: Response) => {
   res.sendFile(path.join(__dirname, '../pages/register.html'));
 });
 
-router.get('/message/:id', (req: Request, res: Response)=>{
-
-  res.status(200).sendFile(path.join(__dirname, '../pages/message.html'))
-})
+router.get('/message/:id', getMessage)
 
 
 router.route('/login').get(getLogin).post(postLogin);
@@ -97,7 +94,7 @@ router.get('/api/v1/me', getMe)
 router.post('/message/:id', postMessage);
 router.route('/chat/:id').get(createChat).post(createChat);
 router.get('/api/v1/messages', getMessages);
-router.get('/api/v1/message/:id', getMessage);
+router.get('/api/v1/message/:id', getAllMessages);
 
 export default router;
 
