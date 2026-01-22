@@ -76,6 +76,8 @@ sendMessageForm.addEventListener("submit", async (e) => {
         });
 
         if (response.ok) {
+            await fetch(`/message/${chat_id}`);
+            console.log("get message:", chat_id)
             messageInput.value = ""; // Clear input
             getPMMessages(); // Refresh messages to show the new one
         }
@@ -88,5 +90,7 @@ getPMMessages();
 
 
 setInterval(() => {
+  const chat_id = window.location.pathname.split("/")[2];
+   fetch(`/message/${chat_id}`);
   getPMMessages();
 }, 3000);

@@ -117,7 +117,7 @@ export const getChats = async(req:Request, res:Response)=>{
         { $match: { participants: userID } },
         {
          $lookup: {
-            from:"Message",
+            from:"messages",
             let: { chatId: "$_id" },
             pipeline:[
               {
@@ -145,8 +145,6 @@ export const getChats = async(req:Request, res:Response)=>{
 
         { $sort: { updatedAt: -1 } }
       ])
-
-      
       
       res.json({
         data:chats
@@ -163,7 +161,6 @@ export const getChats = async(req:Request, res:Response)=>{
 export const getUsers =  async(req:Request, res:Response)=>{
     try {
         const users = await User.find().sort({lastActiveAt:-1})
-        console.log("users")
         res.json({
             data:users
         })
@@ -202,7 +199,7 @@ export const getMessages = async(req:Request, res:Response)=>{
       .populate("chat");
 
       res.json({
-          data:messages
+        data:messages
       })
     } catch (error) {
         res.status(500).json({
@@ -218,10 +215,9 @@ export const createChat = async (req: Request, res: Response) => {
   const userID = new mongoose.Types.ObjectId(decoded.id)
 
   try {
-
   // 1 create chat
   let chat = await Chat.findOne({
-   participants: { $all: [userID, id], $size: 2 }
+   participants: { $all: [userID, id] }
   });
   if (!chat) {
     // Create new
@@ -242,7 +238,7 @@ export const postMessage = async (req: Request, res: Response) => {
 
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET!) as { id: string };
-    const userID = decoded.id;
+    const userID = new mongoose.Types.ObjectId(decoded.id);
 
     // 1. Find the chat by ID
     let chat = await Chat.findById(chatId);
@@ -252,7 +248,7 @@ export const postMessage = async (req: Request, res: Response) => {
     const newMessage = await Message.create({
       chat: chat._id,
       sender: userID,
-      text: req.body.message // Make sure app.use(express.json()) is in your server.js
+      text: req.body.message
     });
     await Chat.findByIdAndUpdate(chatId, {lastMessage:newMessage, updatedAt: new Date()}, {new:true, runValidators:true});
 
@@ -265,7 +261,7 @@ export const postMessage = async (req: Request, res: Response) => {
   }
 }
 
-export const getAllMessages = async(req: Request, res: Response)=>{
+export const getAllPMMessage = async(req: Request, res: Response)=>{
   const allMessagesPM = await Message.find({
     chat:{
       $in: await Chat.find({_id:req.params.id})
@@ -292,7 +288,5 @@ export const getMessage = async(req: Request, res: Response)=>{
           $push: { readBy: { user: userID, readAt: new Date() } } 
         }
     );
-
-
   res.status(200).sendFile(path.join(__dirname, '../pages/message.html'))
 }

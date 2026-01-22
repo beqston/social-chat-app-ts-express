@@ -3,7 +3,7 @@ import path from "path";
 import User from "../model/user.ts";
 import isAuthUser, { tokenExpires } from "../middleware/auth.ts";
 import userValidation from "../utils/userValidation.ts";
-import { getChats, getLogin, getMe, getMessage, getMessages, getUsers, logout, postMessage, postLogin, postUser, createChat, getAllMessages } from "../controlers/userControlers.ts";
+import { getChats, getLogin, getMe, getMessage, getMessages, getUsers, logout, postMessage, postLogin, postUser, createChat, getAllPMMessage } from "../controlers/userControlers.ts";
 import jwt from "jsonwebtoken"
 import isActive from "../middleware/isActive.ts";
 import mongoose from "mongoose";
@@ -98,8 +98,9 @@ router.get('/api/v1/chats', getChats);
 router.get('/api/v1/me', getMe)
 router.post('/message/:id', postMessage);
 router.route('/chat/:id').get(createChat).post(createChat);
+// all my messages with populate sender and chat
 router.get('/api/v1/messages', getMessages);
-router.get('/api/v1/message/:id', getAllMessages);
+router.get('/api/v1/message/:id', getAllPMMessage);
 
 export default router;
 

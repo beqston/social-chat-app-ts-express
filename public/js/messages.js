@@ -41,6 +41,8 @@ async function getMessages() {
                 <a href="/message/${chat._id}">
                     <div class="profile-image">${username[0].toUpperCase()}</div>
                     <h2>${username}</h2>
+                    ${chat.unreadCount > 0 ? `<p class="unread-message">${chat.unreadCount}</p>` : ""}
+
                 </a>
             `;
             messagesCNT.appendChild(userDiv);

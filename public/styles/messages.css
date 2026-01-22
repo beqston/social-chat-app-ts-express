@@ -25,6 +25,7 @@
     align-items: center;
     padding: 12px;
     column-gap: 0.8rem;
+    position: relative;
 }
 .profile-image{
     width: 40px;
@@ -91,7 +92,34 @@
     resize: none;
     height: 70px;
 }
+.unread-message{
+    color:rgb(59, 103, 17);
+    font-size: 22px;
+    position: absolute;
+    right: 8%;
+    font-family: 700;
+    animation: newMessage 2s ease-in-out infinite;
+    animation-delay: 1s;
+}
 
+
+@keyframes newMessage {
+  0% {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+  20% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  70% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  100% {
+    opacity: 0;
+  }
+}
 
 @media screen and (max-width:772px) {
     #messages-cnt{
