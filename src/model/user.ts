@@ -19,6 +19,7 @@ const userSchema = new Schema<IUser>({
         type:String,
         trim:true,
         unique: true,
+        lowercase: true,
         minlength:[4, "Username min length must be 4 cheracter"],
         maxlength:[32, "Username min length must be 4 cheracter"],
         required:[true, "You have must be username"]
@@ -61,13 +62,13 @@ const userSchema = new Schema<IUser>({
 });
 
 
-// Virtual field (not stored in DB)
+// Virtual field confirmPassword set and get
 userSchema.virtual('confirmPassword')
-  .get(function (this: HydratedDocument<IUser>) {
-    return this._confirmPassword;
-  })
   .set(function (this: HydratedDocument<IUser>, value: string) {
     this._confirmPassword = value;
+  })
+  .get(function (this: HydratedDocument<IUser>) {
+    return this._confirmPassword;
   });
 
 // Hash password before saving
@@ -83,6 +84,21 @@ userSchema.pre("save", async function (next) {
   user.password = await bcrypt.hash(user.password, 12);
   next();
 });
+
+//check validate virtual confirmPassword field
+userSchema.pre("validate", function(next){
+  if(this.isModified("password")){
+
+    if(!this._confirmPassword){
+      this.invalidate('confirmPassword', 'Confirm password is required');
+    }
+
+    if(this.password !== this._confirmPassword){
+      this.invalidate('confirmPassword', 'Passwords do not match');
+    }
+  }
+  next();
+})
 
 userSchema.virtual('lastActiveAgo').get(function () {
   if (!this.lastActiveAt) return null;

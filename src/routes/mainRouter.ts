@@ -6,6 +6,7 @@ import userValidation from "../utils/userValidation.ts";
 import { getChats, getLogin, getMe, getMessage, getMessages, getUsers, logout, postMessage, postLogin, postUser, createChat, getAllMessages } from "../controlers/userControlers.ts";
 import jwt from "jsonwebtoken"
 import isActive from "../middleware/isActive.ts";
+import mongoose from "mongoose";
 import bcrypt from "bcrypt"
 import Chat from "../model/chat.ts";
 import Message from "../model/messages.ts";
@@ -20,6 +21,10 @@ router.use((req:Request, res:Response, next:NextFunction)=>{
   const isAuth = isAuthUser(req);
   const publicPaths = ['/login', '/register', "/add-user"];
   if(publicPaths.includes(req.path)){
+    if(isAuth){
+      res.redirect('/');
+      return next()
+    }
     return next();
   }
   if(!isAuth){
@@ -35,7 +40,7 @@ router.use(async(req:Request, res:Response, next:NextFunction) => {
     return next();
   }
   const decoded = jwt.verify(req.cookies.token, process.env.JWT_SECRET!) as { id: string };
-  const userID = decoded.id;
+  const userID = new mongoose.Types.ObjectId(decoded.id);
   const clientId = req.ip;
   const now = Date.now();
 

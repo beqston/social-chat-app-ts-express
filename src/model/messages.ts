@@ -38,4 +38,7 @@ const messageSchema = new Schema<IMessage>({
 // Critical index: sort by time descending for latest messages first
 messageSchema.index({ chat: 1, createdAt: -1 });
 
+// For marking as read
+messageSchema.index({ chat: 1, sender:1, "readBy.user": 1 });
+
 export default mongoose.model<IMessage>('Message', messageSchema);

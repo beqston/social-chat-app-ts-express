@@ -76,8 +76,3 @@ async function getUsers() {
 
 
 getUsers();
-
-
-setInterval(()=>{
-    getUsers()
-}, 3000)

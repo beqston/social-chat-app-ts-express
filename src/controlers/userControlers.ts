@@ -67,7 +67,7 @@ export const logout = (req: Request, res: Response) => {
 
 export const postLogin = async(req: Request, res: Response) => {
   try {
-    const user = await User.findOne({username:req.body.username}).select("+password");
+    const user = await User.findOne({username:req.body.username.toLowerCase()}).select("+password");
 
     if(!user){
       return res.status(401).json({
@@ -117,7 +117,7 @@ export const getChats = async(req:Request, res:Response)=>{
         { $match: { participants: userID } },
         {
          $lookup: {
-            from:"messages",
+            from:"Message",
             let: { chatId: "$_id" },
             pipeline:[
               {
@@ -163,6 +163,7 @@ export const getChats = async(req:Request, res:Response)=>{
 export const getUsers =  async(req:Request, res:Response)=>{
     try {
         const users = await User.find().sort({lastActiveAt:-1})
+        console.log("users")
         res.json({
             data:users
         })
@@ -283,12 +284,15 @@ export const getMessage = async(req: Request, res: Response)=>{
   
   await Message.updateMany(
         { 
-            chat: chatId, 
-            "readBy.user": { $ne: userID } 
+          chat: chatId, 
+          sender: { $ne: userID },
+          "readBy.user": { $ne: userID }
         },
         { 
-            $push: { readBy: { user: userID, readAt: new Date() } } 
+          $push: { readBy: { user: userID, readAt: new Date() } } 
         }
     );
+
+
   res.status(200).sendFile(path.join(__dirname, '../pages/message.html'))
 }
