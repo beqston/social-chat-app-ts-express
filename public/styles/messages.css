@@ -101,7 +101,25 @@
     animation: newMessage 2s ease-in-out infinite;
     animation-delay: 1s;
 }
+.last-message{
+    color:cadetblue
+}
 
+.last-message-cnt{
+    display: flex;
+    column-gap: 10px;
+}
+.last-message-profile{
+    width: 22px;
+    height: 22px;
+    background-color: greenyellow;
+    border-radius: 50%;
+    text-transform: uppercase;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    color: azure;
+}
 
 @keyframes newMessage {
   0% {

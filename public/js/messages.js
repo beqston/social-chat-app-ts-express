@@ -19,7 +19,6 @@ const messagesCNT = document.getElementById("messages");
 // 2. Your existing fetch logic (Cleaned up slightly)
 async function getMessages() {
     try {
-        messagesCNT.innerHTML = ''; // Clear container first
         
         const resUser = await fetch("/api/v1/me");
         const userID = await resUser.json();
@@ -29,20 +28,27 @@ async function getMessages() {
 
         const resUsers = await fetch("/api/v1/users");
         const { data: users } = await resUsers.json();
-
+        
+        messagesCNT.innerHTML = ''; 
         chats.forEach((chat) => {
             const otherUserId = chat.participants.find(user => user !== userID);
             const findUser = users.find(u => u._id === otherUserId);
             const username = findUser ? findUser.username : "Unknown";
+            const lastMessageSender = users.find((user)=>user._id==chat.lastMessage[0].sender);
 
             const userDiv = document.createElement('div');
             userDiv.className = 'see-message-cnt'; // Use class, not ID
             userDiv.innerHTML = `
                 <a href="/message/${chat._id}">
                     <div class="profile-image">${username[0].toUpperCase()}</div>
-                    <h2>${username}</h2>
+                    <div>
+                        <h2>${username}</h2>
+                        <div class="last-message-cnt">
+                            <p class="last-message-profile">${lastMessageSender.username[0]}</p>
+                            <p class="last-message">${chat.lastMessage[0].text}</p>
+                        </div>
+                    </div>
                     ${chat.unreadCount > 0 ? `<p class="unread-message">${chat.unreadCount}</p>` : ""}
-
                 </a>
             `;
             messagesCNT.appendChild(userDiv);
@@ -55,3 +61,6 @@ async function getMessages() {
 
 getMessages();
 
+setInterval(() => {
+  getMessages();
+}, 3000);

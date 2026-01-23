@@ -135,6 +135,14 @@ export const getChats = async(req:Request, res:Response)=>{
             as: "unreadMessages"
           }
         },
+        {
+          $lookup: {
+            from: "messages", // The name of your message collection
+            localField: "lastMessage", // The ID stored in Chat
+            foreignField: "_id",
+            as: "lastMessage" // Overwrite the ID with the actual object
+          }
+        },
 
       {
         $addFields: {

@@ -5,11 +5,11 @@ const messageInput = document.getElementById("message");
 
 async function getPMMessages() {
     try {
-        // 1. Get current Chat ID from URL
+        // Get current Chat ID from URL
         const pathParts = window.location.pathname.split("/");
         const chat_id = pathParts[2];
 
-        // 2. Fetch User, Chats, and Messages in parallel for better performance
+        //  Fetch User, Chats, and Messages in parallel for better performance
         const [resUser, resChats, resUsers, resMessage] = await Promise.all([
             fetch("/api/v1/me"),
             fetch("/api/v1/chats"),
@@ -22,25 +22,34 @@ async function getPMMessages() {
         const { data: users } = await resUsers.json();
         const { data: messages } = await resMessage.json();
 
-        // 3. Render Sidebar (Chats list)
+        // Render Sidebar (Chats list)
         messagesCNT.innerHTML = ''; 
         chats.forEach((chat) => {
             const otherUserId = chat.participants.find(u => u !== userID);
             const findUser = users.find(u => u._id === otherUserId);
             const username = findUser ? findUser.username : "Unknown";
+            const lastMessageSender = users.find((user)=>user._id==chat.lastMessage[0].sender);
 
             const userDiv = document.createElement('div');
             userDiv.className = 'see-message-cnt'; 
             userDiv.innerHTML = `
                 <a href="/message/${chat._id}">
                     <div class="profile-image">${username[0].toUpperCase()}</div>
-                    <h2>${username}</h2>
+                    <div>
+                        <h2>${username}</h2>
+                        <div class="last-message-cnt">
+                            <p class="last-message-profile">${lastMessageSender.username[0]}</p>
+                            <p class="last-message">${chat.lastMessage[0].text}</p>
+                        </div>
+                    </div>
+                    ${chat.unreadCount > 0 ? `<p class="unread-message">${chat.unreadCount}</p>` : ""}
+                    
                 </a>
             `;
             messagesCNT.appendChild(userDiv);
         });
 
-        // 4. Render Main Chat Messages
+        // Render Main Chat Messages
         allMessagesPM.innerHTML = ''; // Clear old messages
         messages.forEach((msg) => {
             const msgDiv = document.createElement('div');
@@ -59,7 +68,7 @@ async function getPMMessages() {
     }
 }
 
-// 5. Handle Sending Messages via AJAX
+// Handle Sending Messages via AJAX
 sendMessageForm.addEventListener("submit", async (e) => {
     e.preventDefault();
     
@@ -77,7 +86,6 @@ sendMessageForm.addEventListener("submit", async (e) => {
 
         if (response.ok) {
             await fetch(`/message/${chat_id}`);
-            console.log("get message:", chat_id)
             messageInput.value = ""; // Clear input
             getPMMessages(); // Refresh messages to show the new one
         }
