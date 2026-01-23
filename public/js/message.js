@@ -3,6 +3,10 @@ const allMessagesPM = document.getElementById("all-messages");
 const sendMessageForm = document.getElementById("send-message-form");
 const messageInput = document.getElementById("message");
 
+
+let lastChatsState = "";
+let lastMessagesState = "";
+
 async function getPMMessages() {
     try {
         // Get current Chat ID from URL
@@ -22,13 +26,26 @@ async function getPMMessages() {
         const { data: users } = await resUsers.json();
         const { data: messages } = await resMessage.json();
 
+        // 2. Convert new data to strings for quick comparison
+        const currentChatsState = JSON.stringify(chats);
+        const currentMessagesState = JSON.stringify(messages);
+
+        // 3. GUARD CLAUSE: If both the sidebar and main chat haven't changed, STOP.
+        if (currentChatsState === lastChatsState && currentMessagesState === lastMessagesState) {
+            return; 
+        }
+
+        // 4. Update the state variables for the next check
+        lastChatsState = currentChatsState;
+        lastMessagesState = currentMessagesState;
+
         // Render Sidebar (Chats list)
         messagesCNT.innerHTML = ''; 
         chats.forEach((chat) => {
             const otherUserId = chat.participants.find(u => u !== userID);
             const findUser = users.find(u => u._id === otherUserId);
             const username = findUser ? findUser.username : "Unknown";
-            const lastMessageSender = users.find((user)=>user._id==chat.lastMessage[0].sender);
+            const lastMessageSender = users.find((user)=>user._id==chat?.lastMessage[0]?.sender);
 
             const userDiv = document.createElement('div');
             userDiv.className = 'see-message-cnt'; 
@@ -37,10 +54,12 @@ async function getPMMessages() {
                     <div class="profile-image">${username[0].toUpperCase()}</div>
                     <div>
                         <h2>${username}</h2>
-                        <div class="last-message-cnt">
-                            <p class="last-message-profile">${lastMessageSender.username[0]}</p>
-                            <p class="last-message">${chat.lastMessage[0].text}</p>
-                        </div>
+                        ${lastMessageSender?`
+                            <div class="last-message-cnt">
+                                <p class="last-message-profile">${lastMessageSender.username[0]}</p>
+                                <p class="last-message">${chat.lastMessage[0].text}</p>
+                            </div>`:""
+                        }
                     </div>
                     ${chat.unreadCount > 0 ? `<p class="unread-message">${chat.unreadCount}</p>` : ""}
                     

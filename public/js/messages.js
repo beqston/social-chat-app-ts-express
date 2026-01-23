@@ -1,4 +1,5 @@
 const messagesCNT = document.getElementById("messages");
+let lastDataString ="";
 
 // // 1. Intercept clicks on the container
 // messagesCNT.addEventListener('click', (e) => {
@@ -29,12 +30,19 @@ async function getMessages() {
         const resUsers = await fetch("/api/v1/users");
         const { data: users } = await resUsers.json();
         
+        const currentDataString = JSON.stringify(chats);
+
+        if(lastDataString==currentDataString){
+            return;
+        }
+
+        lastDataString = currentDataString;
         messagesCNT.innerHTML = ''; 
         chats.forEach((chat) => {
             const otherUserId = chat.participants.find(user => user !== userID);
             const findUser = users.find(u => u._id === otherUserId);
             const username = findUser ? findUser.username : "Unknown";
-            const lastMessageSender = users.find((user)=>user._id==chat.lastMessage[0].sender);
+            const lastMessageSender = users.find((user)=>user._id==chat?.lastMessage[0]?.sender);
 
             const userDiv = document.createElement('div');
             userDiv.className = 'see-message-cnt'; // Use class, not ID
@@ -43,10 +51,12 @@ async function getMessages() {
                     <div class="profile-image">${username[0].toUpperCase()}</div>
                     <div>
                         <h2>${username}</h2>
-                        <div class="last-message-cnt">
-                            <p class="last-message-profile">${lastMessageSender.username[0]}</p>
-                            <p class="last-message">${chat.lastMessage[0].text}</p>
-                        </div>
+                        ${lastMessageSender?`
+                            <div class="last-message-cnt">
+                                <p class="last-message-profile">${lastMessageSender.username[0]}</p>
+                                <p class="last-message">${chat.lastMessage[0].text}</p>
+                            </div>`:""
+                        }
                     </div>
                     ${chat.unreadCount > 0 ? `<p class="unread-message">${chat.unreadCount}</p>` : ""}
                 </a>
