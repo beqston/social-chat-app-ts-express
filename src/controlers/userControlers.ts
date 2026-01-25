@@ -137,10 +137,10 @@ export const getChats = async(req:Request, res:Response)=>{
         },
         {
           $lookup: {
-            from: "messages", // The name of your message collection
-            localField: "lastMessage", // The ID stored in Chat
+            from: "messages", 
+            localField: "lastMessage",
             foreignField: "_id",
-            as: "lastMessage" // Overwrite the ID with the actual object
+            as: "lastMessage"
           }
         },
 
@@ -297,4 +297,22 @@ export const getMessage = async(req: Request, res: Response)=>{
         }
     );
   res.status(200).sendFile(path.join(__dirname, '../pages/message.html'))
+}
+
+export const getMessagesCount = async(req: Request, res: Response)=>{
+  const decoded = jwt.verify(req.cookies.token, process.env.JWT_SECRET!) as { id: string };
+  const userID = new mongoose.Types.ObjectId(decoded.id)
+  
+  try {
+    const userChatsIds = await Chat.find({participants:userID}).distinct("_id")
+    const unreadCount = await Message.countDocuments({
+      chat: {$in:userChatsIds},
+      "readBy.user":{$ne:userID},
+      sender:{$ne: userID},
+      deletedFor:{$ne:userID}
+    });
+    res.status(200).json({ count: unreadCount });
+  } catch (error) {
+    res.status(500).send("Server Error");
+  }
 }

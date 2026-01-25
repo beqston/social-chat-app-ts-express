@@ -67,10 +67,8 @@ async function getMessages() {
         console.error("Fetch failed:", error);
     }
 }
-
-
 getMessages();
 
 setInterval(() => {
-  getMessages();
+    getMessages();
 }, 3000);

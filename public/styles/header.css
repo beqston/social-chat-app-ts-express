@@ -45,8 +45,33 @@ header div:last-child{
     flex-direction: row-reverse;
     padding-right: 20px;
 }
+
 header div:last-child input[type="text"]:focus {
   outline: none;
   border-color: #007bff;
   box-shadow: 0 0 5px rgba(0, 123, 255, 0.3);
+}
+
+#msg-badge{
+  color: red;
+  font-weight: bold;
+  font-size: 22px;
+  animation: newMessageCount 2s ease-in-out infinite;
+  animation-delay: 1s;
+}
+
+
+@keyframes newMessageCount {
+  0% {
+    opacity: 0;
+  }
+  30% {
+    opacity: 1;
+  }
+  70% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
 }

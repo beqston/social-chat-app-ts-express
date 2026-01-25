@@ -2,7 +2,10 @@
   <header>
     <div>
       <a href="/"><img src="/images/header/home.png" alt="Home"></a>
-      <a href="/messages"><img src="/images/header/message.png" alt="Message"></a>
+      <a id="messages-count" href="/messages">
+        <img src="/images/header/message.png" alt="Message">
+        <span id="msg-badge"></span>
+      </a>
       <a href="/profile"><img src="/images/header/profile.png" alt="Profile"></a>
       <a href="/users">All users</a>
       <form action="/loginOut" method="POST">

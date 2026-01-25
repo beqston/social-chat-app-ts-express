@@ -46,11 +46,14 @@ async function getPMMessages() {
             const findUser = users.find(u => u._id === otherUserId);
             const username = findUser ? findUser.username : "Unknown";
             const lastMessageSender = users.find((user)=>user._id==chat?.lastMessage[0]?.sender);
+            const chatUrl = `/message/${chat._id}`;
+            const isActive = window.location.pathname === chatUrl ? "active" : "";
 
             const userDiv = document.createElement('div');
-            userDiv.className = 'see-message-cnt'; 
+            userDiv.className = `see-message-cnt ${isActive}`;
+
             userDiv.innerHTML = `
-                <a href="/message/${chat._id}">
+                <a href="${chatUrl}">
                     <div class="profile-image">${username[0].toUpperCase()}</div>
                     <div>
                         <h2>${username}</h2>
