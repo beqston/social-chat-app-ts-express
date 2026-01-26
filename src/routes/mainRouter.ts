@@ -10,9 +10,11 @@ import mongoose from "mongoose";
 import bcrypt from "bcrypt"
 import Chat from "../model/chat.ts";
 import Message from "../model/messages.ts";
+import { error } from "console";
 
 const router = express.Router();
 // check token expires
+
 router.use((req:Request, res:Response, next:NextFunction)=>{
   tokenExpires(req, res, next);
 });
@@ -32,32 +34,38 @@ router.use((req:Request, res:Response, next:NextFunction)=>{
   }
   next()
 });
-// check client request interval
-const lastRequests = new Map();
-router.use(async(req:Request, res:Response, next:NextFunction) => {
+// check user last active and update it
+const lastUpdates = new Map<string, number>(); 
+const UPDATE_THRESHOLD = 3 * 60 * 1000; 
+
+router.use((req: Request, res: Response, next: NextFunction) => {
   const isAuth = isAuthUser(req);
-  if(!isAuth){
-    return next();
-  }
-  const decoded = jwt.verify(req.cookies.token, process.env.JWT_SECRET!) as { id: string };
-  const userID = new mongoose.Types.ObjectId(decoded.id);
-  const clientId = req.ip;
-  const now = Date.now();
+  if (!isAuth) return next();
 
-  if (lastRequests.has(clientId)) {
-    const interval = now - lastRequests.get(clientId);
+  try {
+    const decoded = jwt.verify(req.cookies.token, process.env.JWT_SECRET!) as { id: string };
+    const userID = decoded.id;
+    const now = Date.now();
+    const lastUpdate = lastUpdates.get(userID);
 
-    if(interval > 2000){
-      await User.findByIdAndUpdate(userID, {
-      lastActiveAt: new Date(),
-      active:true
-    });
+    if (!lastUpdate || (now - lastUpdate) > UPDATE_THRESHOLD) {
+      if (lastUpdates.size > 3000) {
+        lastUpdates.clear();
+      };
+      lastUpdates.set(userID, now);
+
+      // We don't 'await' this so the user request finishes instantly
+      User.findByIdAndUpdate(userID, {
+        lastActiveAt: new Date(),
+        active: true
+      }).catch(err => console.error("Update active status failed", err));
     }
+  } catch (err) {
+    console.log(error)
   }
-
-  lastRequests.set(clientId, now);
   next();
 });
+
 
 // check active user 
 router.use((req:Request,res:Response,next:NextFunction)=>{
