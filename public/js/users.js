@@ -53,6 +53,7 @@ async function getUsers() {
             userDiv.innerHTML = `
                 <h2>${user.username}</h2>
                 <h2>${user.email}</h2>
+                <p>${user.active?"Active":"Not Active"}</p>
                 <button>Send Message</button>
                 <a href="/chat/${user._id}">link</a>
             `;

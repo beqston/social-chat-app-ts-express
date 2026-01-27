@@ -13,8 +13,8 @@ import Message from "../model/messages.ts";
 import { error } from "console";
 
 const router = express.Router();
-// check token expires
 
+// check token expires
 router.use((req:Request, res:Response, next:NextFunction)=>{
   tokenExpires(req, res, next);
 });
@@ -34,6 +34,7 @@ router.use((req:Request, res:Response, next:NextFunction)=>{
   }
   next()
 });
+
 // check user last active and update it
 const lastUpdates = new Map<string, number>(); 
 const UPDATE_THRESHOLD = 3 * 60 * 1000; 
@@ -54,7 +55,7 @@ router.use((req: Request, res: Response, next: NextFunction) => {
       };
       lastUpdates.set(userID, now);
 
-      // We don't 'await' this so the user request finishes instantly
+      
       User.findByIdAndUpdate(userID, {
         lastActiveAt: new Date(),
         active: true
@@ -65,7 +66,6 @@ router.use((req: Request, res: Response, next: NextFunction) => {
   }
   next();
 });
-
 
 // check active user 
 router.use((req:Request,res:Response,next:NextFunction)=>{
