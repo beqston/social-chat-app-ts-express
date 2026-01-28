@@ -34,6 +34,18 @@ async function getChatID(item) {
 }
 
 
+function getRelativeTime(date) {
+  const seconds = Math.floor((new Date() - date) / 1000);
+  
+  if (seconds < 60) return 'Just now';
+  const minutes = Math.floor(seconds / 60);
+  if (minutes < 60) return `${minutes}m ago`;
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) return `${hours}h ago`;
+  
+  return date.toLocaleDateString(); // Fallback to date
+}
+
 async function getUsers() {
     try {
         const res = await fetch('/api/v1/users');
@@ -53,7 +65,8 @@ async function getUsers() {
             userDiv.innerHTML = `
                 <h2>${user.username}</h2>
                 <h2>${user.email}</h2>
-                <p>${user.active?"Active":"Not Active"}</p>
+                <p>${user.active?"Online":"Offline"}</p>
+                <p>${user.lastActiveAgo}</p>
                 <button>Send Message</button>
                 <a href="/chat/${user._id}">link</a>
             `;
