@@ -316,3 +316,54 @@ export const getMessagesCount = async(req: Request, res: Response)=>{
     res.status(500).send("Server Error");
   }
 }
+
+export const deleteMessage = async (req: Request, res: Response) => {
+  const { id } = req.params;
+  const token = req.cookies.token;
+
+  if (!token) {
+    return res.status(401).json({ message: "Unauthorized" });
+  }
+
+  try {
+    const result = await Message.deleteOne({ _id: id });
+
+    if (result.deletedCount === 0) {
+      return res.status(404).json({ message: "Message not found" });
+    }
+
+    return res.status(200).json({
+      success: true,
+      message: "Message deleted successfully",
+    });
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ message: "Server error" });
+  }
+};
+
+
+export const updateMessage = async (req: Request, res: Response) => {
+  const { id } = req.params;
+  const token = req.cookies.token;
+
+  if (!token) {
+    return res.status(401).json({ message: "Unauthorized" });
+  }
+
+  try {
+    const message = await Message.findByIdAndUpdate({ _id: id }, {text:req.body.message}, {new:true, runValidators:true});
+
+    if (message) {
+      return res.status(404).json({ message: "Message not found" });
+    }
+
+    return res.status(201).json({
+      success: true,
+      message: "Message deleted successfully",
+    });
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ message: "Server error" });
+  }
+};

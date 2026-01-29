@@ -60,6 +60,7 @@
     align-content: flex-end;
 }
 .message-buble{
+    position: relative;
     background-color: whitesmoke;
     border-radius: 12px;
     margin-bottom: 4px;
@@ -77,7 +78,7 @@
     color:rgb(77, 20, 19);
 }
 /* send message bar */
-#send-message-form {
+#send-message-form, #send-edit-form {
     display: flex;
     gap: 10px;
     padding: 10px;
@@ -85,7 +86,9 @@
     background: #fff;
     position: sticky;
 }
-
+#send-edit-form{
+    display: none;
+}
 /* textarea */
 #send-message-form textarea {
     flex: 1;
@@ -123,6 +126,44 @@
 .active{
     background-color: rgba(112, 157, 241, 0.23);
 }
+
+/* message buble  edit, detele wrapper */
+.edit-delete-wrpapper {
+    visibility: hidden;
+    opacity: 0;
+    position: absolute;
+    left: 20px;
+    bottom: 10px;
+    transform: translateY(5px); 
+    transition: opacity 0.3s ease-in-out, transform 0.4s ease-in-out, visibility 0.3s;
+}
+
+.message-buble {
+    position: relative;
+    min-height: 40px;   
+}
+
+.message-buble:hover .edit-delete-wrpapper {
+    visibility: visible;
+    opacity: 1;
+    transform: translateY(0); 
+}
+
+.edit-delete-wrpapper button {
+    cursor: pointer;
+    font-size: 12px;
+    padding: 2px 8px;
+    background: #f0f0f0;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    transition: background 0.2s;
+}
+
+.edit-delete-wrpapper button:hover {
+    background: #e0e0e0;
+}
+
+
 @keyframes newMessage {
   0% {
     opacity: 0;

@@ -2,10 +2,10 @@
 import mongoose, { Schema, Document } from 'mongoose';
 
 export interface IChat extends Document {
-  participants: mongoose.Types.ObjectId[];  // Array of User IDs (2 for private, more for groups)
-  isGroup?: boolean;                        // Optional flag if you need to distinguish
-  groupName?: string;                       // For group chats
-  lastMessage?: mongoose.Types.ObjectId;    // Denormalized: ref to latest message (for quick inbox view)
+  participants: mongoose.Types.ObjectId[];  
+  isGroup?: boolean;                        
+  groupName?: string;                       
+  lastMessage?: mongoose.Types.ObjectId;  
   createdAt: Date;
   updatedAt: Date;
 }

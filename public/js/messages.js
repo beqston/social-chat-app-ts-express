@@ -45,7 +45,7 @@ async function getMessages() {
             const lastMessageSender = users.find((user)=>user._id==chat?.lastMessage[0]?.sender);
 
             const userDiv = document.createElement('div');
-            userDiv.className = 'see-message-cnt'; // Use class, not ID
+            userDiv.className = 'see-message-cnt';
             userDiv.innerHTML = `
                 <a href="/message/${chat._id}">
                     <div class="profile-image">${username[0].toUpperCase()}</div>

@@ -72,15 +72,47 @@ async function getPMMessages() {
         });
 
         // Render Main Chat Messages
-        allMessagesPM.innerHTML = ''; // Clear old messages
+        allMessagesPM.innerHTML = ''; 
         messages.forEach((msg) => {
             const msgDiv = document.createElement('div');
             msgDiv.className = msg.sender === userID ? 'message-own' : 'message-other'; 
             msgDiv.classList.add("message-buble")
-            msgDiv.innerHTML = `<p>${msg.text}</p>`;
+            msgDiv.innerHTML = `
+                <p>${msg.text}</p>
+                ${
+                    msg.sender == userID?
+                    `<div class="edit-delete-wrpapper">
+                       <button class="edit-btn">Edit</button>
+                       <button class="delete-btn">Delete</button>
+                    </div>`:""
+                }
+
+            `;
+
+            // delete message
+            const deleteBtn = msgDiv.querySelector('.delete-btn');
+            if (deleteBtn) {
+                deleteBtn.onclick = async() => {
+                    try {
+                        await fetch("/message/"+msg._id,{
+                            method:"DELETE"
+                        })
+                    } catch (error) {
+                        alert("Delete failed!");
+                    }
+                };
+                getPMMessages(); 
+            }
+
+
+            // edit message
+
             
             allMessagesPM.appendChild(msgDiv);
         });
+
+    
+
 
         // Auto-scroll to bottom
         allMessagesPM.scrollTop = allMessagesPM.scrollHeight;
