@@ -104,8 +104,7 @@ router.post("/add-user", userValidation, postUser);
 router.get('/api/v1/users', getUsers);
 router.get('/api/v1/chats', getChats);
 router.get('/api/v1/me', getMe)
-router.post('/message/:id', postMessage);
-router.route('/message/:id').patch(updateMessage).delete(deleteMessage);
+router.route('/message/:id').post(postMessage).patch(updateMessage).delete(deleteMessage);
 router.route('/chat/:id').get(createChat).post(createChat);
 // all my messages with populate sender and chat
 router.get('/api/v1/messages', getMessages);

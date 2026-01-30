@@ -3,6 +3,9 @@ const allMessagesPM = document.getElementById("all-messages");
 const sendMessageForm = document.getElementById("send-message-form");
 const messageInput = document.getElementById("message");
 
+const editIdInput = document.getElementById("edit-message-id"); 
+const sendBtn = document.getElementById("send-btn");
+
 
 let lastChatsState = "";
 let lastMessagesState = "";
@@ -107,12 +110,18 @@ async function getPMMessages() {
 
             // edit message
 
+            const editBTN = msgDiv.querySelector('.edit-btn');
+            if(editBTN){
+                editBTN.onclick = async()=>{
+                    messageInput.value = msg.text;
+                    editIdInput.value = msg._id;
+                    sendBtn.textContent ="Edit Message";
+                    messageInput.focus();
+                }
+            }
             
             allMessagesPM.appendChild(msgDiv);
         });
-
-    
-
 
         // Auto-scroll to bottom
         allMessagesPM.scrollTop = allMessagesPM.scrollHeight;
@@ -121,34 +130,51 @@ async function getPMMessages() {
         console.error("Fetch failed:", error);
     }
 }
+getPMMessages();
 
-// Handle Sending Messages via AJAX
+// 1. Move the listener OUTSIDE any functions and IF blocks
 sendMessageForm.addEventListener("submit", async (e) => {
     e.preventDefault();
     
     const chat_id = window.location.pathname.split("/")[2];
     const text = messageInput.value;
+    const messageID = editIdInput.value; 
 
-    if (!text.trim()) return; // Don't send empty messages
+    if (!text.trim()) return;
 
     try {
-        const response = await fetch(`/message/${chat_id}`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ message: text })
-        });
+        if (messageID) {
+            const response = await fetch("/message/" + messageID, {
+                method: "PATCH",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ message: text })
+            });
 
-        if (response.ok) {
-            await fetch(`/message/${chat_id}`);
-            messageInput.value = ""; // Clear input
-            getPMMessages(); // Refresh messages to show the new one
+            if (response.ok) {
+                editIdInput.value = ""; 
+                sendBtn.textContent = "Send Message";
+                messageInput.value = "";
+                lastMessagesState = "";
+                getPMMessages();
+            }
+            
+        } else {
+            const response = await fetch(`/message/${chat_id}`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ message: text })
+            });
+
+            if (response.ok) {
+                messageInput.value = "";
+                lastMessagesState = "";
+                getPMMessages();
+            }
         }
     } catch (err) {
-        console.error("Error sending message:", err);
+        console.error("Operation failed:", err);
     }
 });
-
-getPMMessages();
 
 
 setInterval(() => {

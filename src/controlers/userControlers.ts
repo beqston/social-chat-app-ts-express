@@ -241,7 +241,6 @@ export const createChat = async (req: Request, res: Response) => {
 export const postMessage = async (req: Request, res: Response) => {
   const { id: chatId } = req.params; // This is the Chat ID from the URL
   const token = req.cookies.token;
-
   if (!token) return res.status(401).json({ message: "Unauthorized" });
 
   try {
@@ -342,9 +341,8 @@ export const deleteMessage = async (req: Request, res: Response) => {
   }
 };
 
-
 export const updateMessage = async (req: Request, res: Response) => {
-  const { id } = req.params;
+  const { id: messageID } = req.params;
   const token = req.cookies.token;
 
   if (!token) {
@@ -352,18 +350,24 @@ export const updateMessage = async (req: Request, res: Response) => {
   }
 
   try {
-    const message = await Message.findByIdAndUpdate({ _id: id }, {text:req.body.message}, {new:true, runValidators:true});
+    const message = await Message.findByIdAndUpdate(
+      { _id: messageID }, 
+      { text: req.body.message }, 
+      { new: true, runValidators: true }
+    );
 
-    if (message) {
+    if (!message) {
       return res.status(404).json({ message: "Message not found" });
     }
 
-    return res.status(201).json({
+    return res.status(200).json({
       success: true,
-      message: "Message deleted successfully",
+      message: "Message updated successfully",
+      data: message
     });
+
   } catch (error) {
-    console.error(error);
+    console.error("Update Error:", error);
     return res.status(500).json({ message: "Server error" });
   }
 };
