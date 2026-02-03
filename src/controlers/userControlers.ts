@@ -114,7 +114,10 @@ export const getChats = async(req:Request, res:Response)=>{
 
       // 1. get all chats
       const chats = await Chat.aggregate([
-        { $match: { participants: userID } },
+        { $match: { 
+          participants: userID,
+          deletedBy: { $nin: [userID] }
+        }},
         {
          $lookup: {
             from:"messages",
@@ -269,10 +272,13 @@ export const postMessage = async (req: Request, res: Response) => {
 }
 
 export const getAllPMMessage = async(req: Request, res: Response)=>{
+  const decoded = jwt.verify(req.cookies.token, process.env.JWT_SECRET!) as { id: string };
+  const userID = new mongoose.Types.ObjectId(decoded.id)
   const allMessagesPM = await Message.find({
     chat:{
       $in: await Chat.find({_id:req.params.id})
-    }
+    },
+    deletedFor:{$ne:userID}
   })
 
   res.json({
@@ -371,3 +377,46 @@ export const updateMessage = async (req: Request, res: Response) => {
     return res.status(500).json({ message: "Server error" });
   }
 };
+
+export const deleteChat = async (req: Request, res: Response)=>{
+
+  const token = req.cookies.token;
+  if (!token) {
+    return res.status(401).json({ message: "Unauthorized" });
+  }
+
+  const {id:chatID}= req.params;
+   const decoded = jwt.verify(req.cookies.token, process.env.JWT_SECRET!) as { id: string };
+   const userID = new mongoose.Types.ObjectId(decoded.id)
+
+  try {
+    const chat = await Chat.findByIdAndUpdate(chatID, 
+      {
+        $push: { deletedBy: userID }
+      },
+      {
+        new:true
+      }
+    );
+    if(!chat){
+      return res.status(404).json({ message: "Chat not found" });
+    }
+
+    if(chat?.deletedBy && chat?.deletedBy?.length > 1){
+      await Chat.findByIdAndDelete(chatID);
+      await Message.deleteMany({chat:chatID});
+      return res.status(200).json({ message: "Chat and history fully deleted." });
+    }
+    
+    await Message.updateMany({chat:chatID}, {$push:{deletedFor:userID}})
+    return res.status(200).json({
+      success: true,
+      message: "Chat Deleted successfully",
+      data: chat
+    });
+  } catch (error) {
+    res.status(500).json({
+      message:"Interval Server Error"
+    })
+  }
+}

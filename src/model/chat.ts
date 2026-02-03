@@ -2,7 +2,8 @@
 import mongoose, { Schema, Document } from 'mongoose';
 
 export interface IChat extends Document {
-  participants: mongoose.Types.ObjectId[];  
+  participants: mongoose.Types.ObjectId[];
+  deletedBy?:mongoose.Types.ObjectId[];
   isGroup?: boolean;                        
   groupName?: string;                       
   lastMessage?: mongoose.Types.ObjectId;  
@@ -27,6 +28,7 @@ const chatSchema = new Schema<IChat>({
       message: 'A chat must have at least 2 unique participants.'
     }
   },
+  deletedBy: [{ type: Schema.Types.ObjectId, ref: 'User' }],
   isGroup: { type: Boolean, default: false },
   groupName: { type: String },
   lastMessage: { type: Schema.Types.ObjectId, ref: 'Message' }

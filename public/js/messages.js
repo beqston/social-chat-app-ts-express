@@ -1,4 +1,6 @@
 const messagesCNT = document.getElementById("messages");
+const removeInputValue = document.getElementById("remove-chat-id");
+
 let lastDataString ="";
 
 // // 1. Intercept clicks on the container
@@ -59,14 +61,50 @@ async function getMessages() {
                         }
                     </div>
                     ${chat.unreadCount > 0 ? `<p class="unread-message">${chat.unreadCount}</p>` : ""}
-                </a>
+                    </a>
+                    <div class="message-options">
+                        <span>...</span>
+                        <div class="option-details none">
+                            <button>Delete Chat</button>
+                        </div>
+                    </div>
             `;
+
+            const dialogDiv = userDiv.querySelector(".message-options")
+            dialogDiv.addEventListener("click", ()=>{
+                userDiv.querySelector(".option-details").classList.remove("none");
+                removeInputValue.value=chat._id;
+            });
+
+            dialogDiv.addEventListener("mouseleave", ()=>{
+                userDiv.querySelector(".option-details").classList.add("none");
+            });
+
+            const deleteChatBTN = userDiv.querySelector("button");
+
+            deleteChatBTN.addEventListener("click", async(e)=>{
+                e.preventDefault();
+                try {
+                    const chatID = removeInputValue.value
+                    const res = await fetch(`/chat/${chatID}`, {
+                        method:"DELETE"
+                    })
+
+                    if(!res.ok){
+                        throw new Error("Chat Not Foound")
+                    }
+                } catch (error) {
+                    console.log(error)
+                }
+            });
+
             messagesCNT.appendChild(userDiv);
         });
     } catch (error) {
         console.error("Fetch failed:", error);
     }
 }
+
 getMessages();
 
 setInterval(() => {
