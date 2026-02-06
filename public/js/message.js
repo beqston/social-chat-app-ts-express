@@ -5,6 +5,7 @@ const messageInput = document.getElementById("message");
 
 const editIdInput = document.getElementById("edit-message-id"); 
 const sendBtn = document.getElementById("send-btn");
+const removeInputValue = document.getElementById("remove-chat-id");
 
 
 let lastChatsState = "";

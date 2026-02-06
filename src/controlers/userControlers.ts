@@ -260,8 +260,10 @@ export const postMessage = async (req: Request, res: Response) => {
       sender: userID,
       text: req.body.message
     });
-    await Chat.findByIdAndUpdate(chatId, {lastMessage:newMessage, updatedAt: new Date()}, {new:true, runValidators:true});
-
+    await Chat.findByIdAndUpdate(chatId, {    $pull: {
+      deletedBy: { $ne: userID }
+    }, lastMessage:newMessage, updatedAt: new Date()}, {new:true, runValidators:true});
+    
     // 3. Return the new message as JSON (Better than redirect for Chat Apps)
     res.status(201).json({ success: true, data: newMessage });
 
@@ -392,7 +394,7 @@ export const deleteChat = async (req: Request, res: Response)=>{
   try {
     const chat = await Chat.findByIdAndUpdate(chatID, 
       {
-        $push: { deletedBy: userID }
+        $addToSet: { deletedBy: userID }
       },
       {
         new:true
@@ -402,7 +404,7 @@ export const deleteChat = async (req: Request, res: Response)=>{
       return res.status(404).json({ message: "Chat not found" });
     }
 
-    if(chat?.deletedBy && chat?.deletedBy?.length > 1){
+    if(chat?.deletedBy && chat.deletedBy.length >= chat.participants.length){
       await Chat.findByIdAndDelete(chatID);
       await Message.deleteMany({chat:chatID});
       return res.status(200).json({ message: "Chat and history fully deleted." });
