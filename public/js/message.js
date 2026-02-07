@@ -49,7 +49,7 @@ async function getPMMessages() {
             const otherUserId = chat.participants.find(u => u !== userID);
             const findUser = users.find(u => u._id === otherUserId);
             const username = findUser ? findUser.username : "Unknown";
-            const lastMessageSender = users.find((user)=>user._id==chat?.lastMessage[0]?.sender);
+            const lastMessageSender = users.find((user)=>user._id==chat?.lastMessage?.sender);
             const chatUrl = `/message/${chat._id}`;
             const isActive = window.location.pathname === chatUrl ? "active" : "";
 
@@ -64,7 +64,7 @@ async function getPMMessages() {
                         ${lastMessageSender?`
                             <div class="last-message-cnt">
                                 <p class="last-message-profile">${lastMessageSender.username[0]}</p>
-                                <p class="last-message">${chat.lastMessage[0].text}</p>
+                                <p class="last-message">${chat.lastMessage.text}</p>
                             </div>`:""
                         }
                     </div>

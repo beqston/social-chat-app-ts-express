@@ -146,12 +146,18 @@ export const getChats = async(req:Request, res:Response)=>{
             as: "lastMessage"
           }
         },
+        {
+          $unwind: {
+            path: "$lastMessage",
+            preserveNullAndEmptyArrays: true 
+          }
+        },
 
-      {
-        $addFields: {
-          unreadCount: { $size: "$unreadMessages" }
-        }
-      },
+        {
+          $addFields: {
+            unreadCount: { $size: "$unreadMessages" }
+          }
+        },
         { $project: { unreadMessages: 0 } },
 
         { $sort: { updatedAt: -1 } }
@@ -232,7 +238,7 @@ export const createChat = async (req: Request, res: Response) => {
   });
   if (!chat) {
     // Create new
-    chat = await Chat.create({ participants: [userID, id] });
+    chat = await Chat.create({ participants: [userID, id], deletedBy: [id]});
   }
     res.redirect(`/message/${chat._id}`);
   } catch (error) {
@@ -260,9 +266,22 @@ export const postMessage = async (req: Request, res: Response) => {
       sender: userID,
       text: req.body.message
     });
-    await Chat.findByIdAndUpdate(chatId, {    $pull: {
-      deletedBy: { $ne: userID }
-    }, lastMessage:newMessage, updatedAt: new Date()}, {new:true, runValidators:true});
+
+    // 1. Remove sender from 'deletedBy' so the chat reappears in their list
+    // 2. Update 'lastMessage' and 'updatedAt' for proper list sorting
+    // 3. Clears the entire array so the chat is visible to all participants
+    await Chat.findByIdAndUpdate(
+      chatId,
+      {
+        $set: { 
+          deletedBy: [], 
+          lastMessage: newMessage._id,
+          updatedAt: new Date()
+        }
+      },
+      { new: true }
+    );
+    
     
     // 3. Return the new message as JSON (Better than redirect for Chat Apps)
     res.status(201).json({ success: true, data: newMessage });
