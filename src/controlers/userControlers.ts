@@ -240,6 +240,16 @@ export const createChat = async (req: Request, res: Response) => {
     // Create new
     chat = await Chat.create({ participants: [userID, id], deletedBy: [id]});
   }
+      await Chat.findByIdAndUpdate(
+      chat._id,
+      {
+        $set: { 
+          deletedBy: [], 
+          updatedAt: new Date()
+        }
+      },
+      { new: true }
+    );
     res.redirect(`/message/${chat._id}`);
   } catch (error) {
     console.error(error);
@@ -281,7 +291,10 @@ export const postMessage = async (req: Request, res: Response) => {
       },
       { new: true }
     );
-    
+
+    // use socket.io for message
+    const io = req.app.get("io");
+    io.to(chatId).emit("receive_message", newMessage);
     
     // 3. Return the new message as JSON (Better than redirect for Chat Apps)
     res.status(201).json({ success: true, data: newMessage });

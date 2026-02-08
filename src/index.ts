@@ -6,7 +6,7 @@ import mainRouter from './routes/mainRouter.ts'
 
 import dotenv from 'dotenv'
 import connectDB from './mongoose/mongoose.ts';
-import {WebSocketServer} from "ws"
+import { Server } from "socket.io"
 import http from "http"
 import cookieParser from "cookie-parser"
 dotenv.config();
@@ -15,7 +15,21 @@ import MongoStore  from "connect-mongo"
 
 
 const app = express();
+//  Create the HTTP server explicitly using the Express app
+const server = http.createServer(app);
 
+//  Initialize Socket.io and attach it to the HTTP server
+const io = new Server(server, {
+  cors: {
+    // If your frontend is running on a different port, 
+    // you need to allow it here. If serving static files from this app, you can remove this.
+    origin: process.env.CLIENT_URL || "http://localhost:3000",
+    methods: ["GET", "POST"]
+  }
+});
+
+// set io in app
+app.set("io", io);
 
 // ✅ Serve static files from root-level /public
 app.use(express.static(path.join(__dirname, '../public')));
@@ -28,7 +42,7 @@ connectDB(process.env.MONGO_URI)
 
 app.use(
   session({
-    name: "sid", // cookie name
+    name: "sid", 
     secret: process.env.SESSION_SECRET || "sessionSecret",
     resave: false,
     saveUninitialized: false,
@@ -44,29 +58,36 @@ app.use(
     })
   })
 );
-app.use(mainRouter)
+app.use(mainRouter);
+
+// Socket.io Connection Event
+io.on("connection", (socket) => {
+  // 1. Join a specific chat room
+  socket.on("join_chat", (chatId) => {
+    socket.join(chatId);
+  });
+
+  // 2. Handle sending messages (if you want to send via socket instead of HTTP)
+  socket.on("send_message", (data) => {
+    // If 'data' contains the chatId, we send only to that room
+    if (data.chatId) {
+      io.to(data.chatId).emit("receive_message", data);
+    } else {
+      socket.broadcast.emit("receive_message", data); 
+    }
+  });
+
+  socket.on("disconnect", () => {
+    console.log("User Disconnected", socket.id);
+  });
+});
+
 
 app.use((req: Request, res: Response) => {
   res.status(404).send('404 Not Found');
 });
 
-const server = http.createServer(app);
-const wss = new WebSocketServer({server});
 
-wss.on("connection", (ws)=>{
-  console.log('client conected')
-  ws.send(JSON.stringify({message:"Welcome From Server Bro!!"}));
-
-  ws.on('message', (data)=>{
-    console.log('data message:', data.toString());
-    ws.send(JSON.stringify({echo:data.toString()}))
-  });
-
-  ws.on('close', () => {
-  console.log('❌ WebSocket client disconnected');
-  });
-})
-
-app.listen(4000, () => {
-  console.log('app listen on port 4000');
+server.listen(4000, () => {
+  console.log('Server is running on port 4000 (Socket.io is now active)');
 });

@@ -1,25 +1,11 @@
 const messagesCNT = document.getElementById("messages");
 const removeInputValue = document.getElementById("remove-chat-id");
 
-let lastDataString ="";
+// Initialize socket
+const socket = io(); 
 
-// // 1. Intercept clicks on the container
-// messagesCNT.addEventListener('click', (e) => {
-//     const link = e.target.closest('a');
-//     if (link) {
-//         e.preventDefault();
+let lastDataString = "";
 
-//         const targetUrl = link.getAttribute('href');
-
-//         // Update the URL without reload
-//         window.history.pushState({}, '', targetUrl);
-
-//         // Send GET request to server manually
-//         fetch(targetUrl)
-//     }
-// });
-
-// 2. Your existing fetch logic (Cleaned up slightly)
 async function getMessages() {
     try {
         
@@ -94,6 +80,8 @@ async function getMessages() {
                     if(!res.ok){
                         throw new Error("Chat Not Foound")
                     }
+                    userDiv.remove();
+                    window.location.href ="/messages"
                 } catch (error) {
                     console.log(error)
                 }
@@ -106,8 +94,10 @@ async function getMessages() {
     }
 }
 
+// Initial call
 getMessages();
 
-setInterval(() => {
-    getMessages();
-}, 3000);
+// Refresh the list when a new message arrives anywhere
+socket.on("receive_message", () => {
+    getMessages(true);
+});

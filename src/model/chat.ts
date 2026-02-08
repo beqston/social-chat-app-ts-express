@@ -11,12 +11,10 @@ export interface IChat extends Document {
   updatedAt: Date;
 }
 
-
 const chatSchema = new Schema<IChat>({
   participants: {
     type: [{ type: Schema.Types.ObjectId, ref: 'User' }],
     required: true,
-    // MOVE VALIDATE HERE (Outside the square brackets)
     validate: {
       validator: function(v: mongoose.Types.ObjectId[]) {
         // v is now the entire array of IDs
@@ -33,7 +31,6 @@ const chatSchema = new Schema<IChat>({
   groupName: { type: String },
   lastMessage: { type: Schema.Types.ObjectId, ref: 'Message' }
 }, { timestamps: true });
-
 
 // Compound index for fast lookup of conversations for a user
 chatSchema.index({ participants: 1 });
