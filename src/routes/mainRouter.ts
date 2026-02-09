@@ -99,7 +99,7 @@ router.get('/message/:id', getMessage)
 
 
 router.route('/login').get(getLogin).post(postLogin);
-router.post('/loginOut', logout)
+router.post('/login-out', logout)
 router.post("/add-user", userValidation, postUser);
 router.get('/api/v1/users', getUsers);
 router.get('/api/v1/chats', getChats);

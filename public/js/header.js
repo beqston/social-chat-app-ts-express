@@ -52,7 +52,27 @@ document.addEventListener('DOMContentLoaded', () => {
       // 1. Insert the HTML
       document.body.insertAdjacentHTML('afterbegin', tpl.innerHTML);
       startTitleEngine()
-      syncMessages()
+      syncMessages();
+
+      const loginOutBTN = document.getElementById("login-out");
+
+
+      loginOutBTN.addEventListener("click", async () => {
+        try {
+          const res = await fetch("/login-out", { method: "POST" });
+          
+          if (!res.ok) {
+            throw new Error("Logout failed");
+          }
+          
+          // Redirect immediately after confirming success
+          window.location.href = "/login";
+          
+        } catch (err) {
+          console.error("Logout error:", err);
+          alert("Failed to logout. Please try again.");
+        }
+      });
 
     //   // 2. Now you can get the element!
     //   const header = document.querySelector('header'); // Or use your specific class/ID
@@ -72,3 +92,4 @@ document.addEventListener('DOMContentLoaded', () => {
     })
     .catch(err => console.error('Error loading header:', err));
 });
+
