@@ -88,7 +88,6 @@ app.use((req: Request, res: Response) => {
   res.status(404).send('404 Not Found');
 });
 
-
 server.listen(4000, () => {
   console.log('Server is running on port 4000 (Socket.io is now active)');
 });

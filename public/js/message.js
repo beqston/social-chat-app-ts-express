@@ -58,7 +58,7 @@ messageInput.addEventListener("input", () => {
 });
 
 socket.on("user_typing", (data) => {
-    // CRITICAL FIX: Only show typing if it's for the CURRENT chat
+    //  Only show typing if it's for the CURRENT chat
     if (data.chatId === chat_id) {
         if (data.isTyping) {
             typingStatus.innerText = `${chatWithUser} is typing...`;
