@@ -76,10 +76,11 @@ io.on("connection", (socket) => {
       socket.broadcast.emit("receive_message", data); 
     }
   });
-
-  socket.on("disconnect", () => {
-    console.log("User Disconnected", socket.id);
+  socket.on("typing", (data) => {
+    // Broadcast to everyone in the room EXCEPT the person typing
+    socket.to(data.chatId).emit("user_typing", data);
   });
+  socket.on("disconnect", () => {});
 });
 
 

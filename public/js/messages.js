@@ -20,6 +20,12 @@ async function getMessages() {
         
         const currentDataString = JSON.stringify(chats);
 
+        if(chats.length == 0){
+            return  messagesCNT.innerHTML = `
+                <h2>Chats Not Found</h2>
+            `; 
+        }
+
         if(lastDataString==currentDataString){
             return;
         }
@@ -27,7 +33,7 @@ async function getMessages() {
         lastDataString = currentDataString;
         messagesCNT.innerHTML = ''; 
         chats.forEach((chat) => {
-            console.log(chat)
+            
             const otherUserId = chat.participants.find(user => user !== userID);
             const findUser = users.find(u => u._id === otherUserId);
             const username = findUser ? findUser.username : "Unknown";

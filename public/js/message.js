@@ -8,10 +8,14 @@ const messageInput = document.getElementById("message");
 const editIdInput = document.getElementById("edit-message-id"); 
 const sendBtn = document.getElementById("send-btn");
 const removeInputValue = document.getElementById("remove-chat-id");
+const typingStatus = document.getElementById("typing-status");
 
+// Global State Variables
 let lastChatsState = "";
 let lastMessagesState = "";
-let currentUserID = null; // Store this globally to avoid re-fetching
+let currentUserID = null;
+let chatWithUser = 'Someone'; // Default value
+let typingTimeout;
 
 // Get current Chat ID from URL
 const pathParts = window.location.pathname.split("/");
@@ -22,15 +26,51 @@ if (chat_id) {
     socket.emit("join_chat", chat_id);
 }
 
-// 3. LISTEN FOR REAL-TIME MESSAGES
+// LISTEN FOR REAL-TIME MESSAGES
 socket.on("receive_message", (newMessage) => {
-    // Only append if the message belongs to this open chat
-    if (newMessage.chat === chat_id || newMessage.chat._id === chat_id) {
-        // Option A: Just re-run the fetch (Simplest)
+    // Only refresh if the message belongs to this open chat window
+    // We check both object and string formats just to be safe
+    const msgChatId = newMessage.chat._id || newMessage.chat;
+    
+    if (msgChatId === chat_id) {
+        lastMessagesState = ""; // Force the UI to update
         getPMMessages(); 
     }
 });
 
+// TYPING INDICATOR LOGIC
+messageInput.addEventListener("input", () => {
+    if (!chat_id) return;
+
+    socket.emit("typing", {
+        chatId: chat_id,
+        isTyping: true
+    });
+
+    clearTimeout(typingTimeout);
+
+    typingTimeout = setTimeout(() => {
+        socket.emit("typing", {
+            chatId: chat_id,
+            isTyping: false
+        });
+    }, 2000);
+});
+
+socket.on("user_typing", (data) => {
+    // CRITICAL FIX: Only show typing if it's for the CURRENT chat
+    if (data.chatId === chat_id) {
+        if (data.isTyping) {
+            typingStatus.innerText = `${chatWithUser} is typing...`;
+            typingStatus.classList.remove("none");
+        } else {
+            typingStatus.innerText = "";
+            typingStatus.classList.add("none");
+        }
+    }
+});
+
+// MAIN FETCH FUNCTION
 async function getPMMessages() {
     try {
         const [resUser, resChats, resUsers, resMessage] = await Promise.all([
@@ -40,12 +80,15 @@ async function getPMMessages() {
             fetch(`/api/v1/message/${chat_id}`)
         ]);
 
-        const userObj = await resUser.json();
-        currentUserID = userObj._id || userObj; // Handle both object or ID string
+        // get my ID
+        const userID = await resUser.json();
+        currentUserID = userID;
+
         const { data: chats } = await resChats.json();
         const { data: users } = await resUsers.json();
         const { data: messages } = await resMessage.json();
 
+        // Check if data actually changed to avoid flickering
         const currentChatsState = JSON.stringify(chats);
         const currentMessagesState = JSON.stringify(messages);
 
@@ -56,24 +99,30 @@ async function getPMMessages() {
         lastChatsState = currentChatsState;
         lastMessagesState = currentMessagesState;
 
-        // --- Render Sidebar ---
+        //  Render Sidebar (Chat List)
         messagesCNT.innerHTML = ''; 
         chats.forEach((chat) => {
             const otherUserId = chat.participants.find(u => u !== currentUserID);
             const findUser = users.find(u => u._id === otherUserId);
             const username = findUser ? findUser.username : "Unknown";
-            const lastMessageSender = users.find((user)=>user._id==chat?.lastMessage?.sender);
+            const lastMessageSender = users.find((user) => user._id == chat?.lastMessage?.sender);
+            
             const chatUrl = `/message/${chat._id}`;
-            const isActive = window.location.pathname === chatUrl ? "active" : "";
+            const isActive = window.location.pathname === chatUrl; // Boolean check
+            
+            // Only update 'chatWithUser' if this is the active chat
+            if (isActive) {
+                chatWithUser = username;
+            }
 
             const userDiv = document.createElement('div');
-            userDiv.className = `see-message-cnt ${isActive}`;
+            userDiv.className = `see-message-cnt ${isActive ? "active" : ""}`; // Add active class if needed in CSS
             userDiv.innerHTML = `
                 <a href="${chatUrl}">
                     <div class="profile-image">${username[0].toUpperCase()}</div>
                     <div>
                         <h2>${username}</h2>
-                        ${lastMessageSender? `
+                        ${lastMessageSender ? `
                             <div class="last-message-cnt">
                                 <p class="last-message-profile">${lastMessageSender.username[0]}</p>
                                 <p class="last-message">${chat.lastMessage.text}</p>
@@ -89,45 +138,57 @@ async function getPMMessages() {
                 </div>
             `;
             
-            const dialogDiv = userDiv.querySelector(".message-options")
-            dialogDiv.addEventListener("click", ()=>{
+            // Toggle Options Menu
+            const dialogDiv = userDiv.querySelector(".message-options");
+            dialogDiv.addEventListener("click", (e) => {
+                e.preventDefault(); // Prevent link click
                 userDiv.querySelector(".option-details").classList.remove("none");
-                removeInputValue.value=chat._id;
+                removeInputValue.value = chat._id;
             });
 
-            dialogDiv.addEventListener("mouseleave", ()=>{
+            dialogDiv.addEventListener("mouseleave", () => {
                 userDiv.querySelector(".option-details").classList.add("none");
             });
 
-            const deleteChatBTN = userDiv.querySelector("button");
-
-            deleteChatBTN.addEventListener("click", async(e)=>{
+            // Delete Chat Logic
+            const deleteChatBTN = userDiv.querySelector(".delete-chat-btn");
+            deleteChatBTN.addEventListener("click", async (e) => {
                 e.preventDefault();
-                try {
-                    const chatID = removeInputValue.value
-                    const res = await fetch(`/chat/${chatID}`, {
-                        method:"DELETE"
-                    })
+                e.stopPropagation(); // Stop bubble up
+                
+                if(!confirm("Are you sure you want to delete this chat?")) return;
 
-                    if(!res.ok){
-                        throw new Error("Chat Not Foound")
+                try {
+                    const chatID = removeInputValue.value;
+                    const res = await fetch(`/chat/${chatID}`, { method: "DELETE" });
+
+                    if (!res.ok) throw new Error("Chat Not Found");
+                    
+                    userDiv.remove(); // Remove immediately from UI
+                    
+                    // If we deleted the open chat, go back to inbox
+                    if (chatID === chat_id) {
+                        window.location.href = "/messages";
+                    } else {
+                        getPMMessages(); // Refresh list if we deleted a side chat
                     }
-                    userDiv.remove();
-                    window.location.href ="/messages"
                     
                 } catch (error) {
-                    console.log(error)
+                    console.log(error);
                 }
             });
+
             messagesCNT.appendChild(userDiv);
         });
 
-        // Render pm messages 
+        //  Render Main Messages (Conversation)
         allMessagesPM.innerHTML = ''; 
         messages.forEach((msg) => {
             const msgDiv = document.createElement('div');
+            // Use the global currentUserID for comparison
             msgDiv.className = msg.sender === currentUserID ? 'message-own' : 'message-other'; 
             msgDiv.classList.add("message-buble");
+            
             msgDiv.innerHTML = `
                 <p>${msg.text}</p>
                 ${msg.sender === currentUserID ? `
@@ -138,16 +199,18 @@ async function getPMMessages() {
                 }
             `;
 
-            // Delete Message Logic
+            // Delete Single Message Logic
             const deleteBtn = msgDiv.querySelector('.delete-btn');
             if (deleteBtn) {
                 deleteBtn.onclick = async () => {
+                    if(!confirm("Delete this message?")) return;
                     await fetch("/message/" + msg._id, { method: "DELETE" });
-                    getPMMessages(); // Refresh
+                    lastMessagesState = ""; // Force refresh
+                    getPMMessages(); 
                 };
             }
 
-            // Edit Message Logic
+            // Edit Single Message Logic
             const editBtn = msgDiv.querySelector('.edit-btn');
             if (editBtn) {
                 editBtn.onclick = () => {
@@ -161,6 +224,7 @@ async function getPMMessages() {
             allMessagesPM.appendChild(msgDiv);
         });
 
+        // Scroll to bottom
         allMessagesPM.scrollTop = allMessagesPM.scrollHeight;
 
     } catch (error) {
@@ -168,10 +232,10 @@ async function getPMMessages() {
     }
 }
 
-// Initial Load
+// INITIAL LOAD
 getPMMessages();
 
-// Handle Form Submission
+// HANDLE SEND FORM
 sendMessageForm.addEventListener("submit", async (e) => {
     e.preventDefault();
     const text = messageInput.value;
@@ -193,6 +257,7 @@ sendMessageForm.addEventListener("submit", async (e) => {
             messageInput.value = "";
             editIdInput.value = ""; 
             sendBtn.textContent = "Send Message";
+            
             lastMessagesState = ""; // Force a re-render
             getPMMessages();
         }
@@ -200,3 +265,5 @@ sendMessageForm.addEventListener("submit", async (e) => {
         console.error("Operation failed:", err);
     }
 });
+
+
