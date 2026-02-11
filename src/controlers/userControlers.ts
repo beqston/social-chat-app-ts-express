@@ -366,16 +366,30 @@ export const deleteMessage = async (req: Request, res: Response) => {
   }
 
   try {
-    const result = await Message.deleteOne({ _id: id });
+    // findByIdAndDelete so we get the document back
+    const deletedMessage = await Message.findByIdAndDelete(id);
 
-    if (result.deletedCount === 0) {
+    if (!deletedMessage) {
       return res.status(404).json({ message: "Message not found" });
+    }
+    
+    // Get the IO instance
+    const io = req.app.get("io");
+
+    //  Emit event to the specific Chat Room
+    // We send the ID of the deleted message so the frontend knows what to remove
+    if (io) {
+        io.to(deletedMessage.chat.toString()).emit("message_deleted", {
+            messageId: deletedMessage._id,
+            chatId: deletedMessage.chat
+        });
     }
 
     return res.status(200).json({
       success: true,
       message: "Message deleted successfully",
     });
+
   } catch (error) {
     console.error(error);
     return res.status(500).json({ message: "Server error" });
@@ -400,6 +414,15 @@ export const updateMessage = async (req: Request, res: Response) => {
     if (!message) {
       return res.status(404).json({ message: "Message not found" });
     }
+
+    // socket.io for update message
+    const io = req.app.get("io");
+
+    // Identify the Chat ID (Room)
+    const chatId = message.chat.toString();
+
+    // Emit the event to that specific room
+    io.to(chatId).emit("message_updated", message)
 
     return res.status(200).json({
       success: true,

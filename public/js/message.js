@@ -70,6 +70,21 @@ socket.on("user_typing", (data) => {
     }
 });
 
+// Listen for updates from other users (or yourself)
+socket.on("message_updated", (updatedMessage) => {
+    // Find the specific message bubble in the HTML
+    getPMMessages();
+});
+// Listen for deleted messages
+socket.on("message_deleted", (data) => {
+    //  Check if the deletion happened in the current chat window
+    if (data.chatId === chat_id) {
+        // This requires your message HTML to have IDs
+        // If you don't have IDs on elements, stick to Option A.
+        getPMMessages(); 
+    }
+});
+
 // MAIN FETCH FUNCTION
 async function getPMMessages() {
     try {
@@ -155,8 +170,6 @@ async function getPMMessages() {
             deleteChatBTN.addEventListener("click", async (e) => {
                 e.preventDefault();
                 e.stopPropagation(); // Stop bubble up
-                
-                if(!confirm("Are you sure you want to delete this chat?")) return;
 
                 try {
                     const chatID = removeInputValue.value;
@@ -203,7 +216,6 @@ async function getPMMessages() {
             const deleteBtn = msgDiv.querySelector('.delete-btn');
             if (deleteBtn) {
                 deleteBtn.onclick = async () => {
-                    if(!confirm("Delete this message?")) return;
                     await fetch("/message/" + msg._id, { method: "DELETE" });
                     lastMessagesState = ""; // Force refresh
                     getPMMessages(); 
