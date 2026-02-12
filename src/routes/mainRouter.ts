@@ -97,7 +97,6 @@ router.get('/register', (req: Request, res: Response) => {
 
 router.get('/message/:id', getMessage)
 
-
 router.route('/login').get(getLogin).post(postLogin);
 router.post('/login-out', logout)
 router.post("/add-user", userValidation, postUser);
@@ -112,4 +111,3 @@ router.get('/api/v1/message/:id', getAllPMMessage);
 router.get("/api/messages/count", getMessagesCount)
 
 export default router;
-

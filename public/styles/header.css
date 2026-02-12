@@ -60,7 +60,17 @@ header div:last-child input[type="text"]:focus {
   animation-delay: 1s;
 }
 
+#login-out{
+  background-color: #f8f9fa;
+  border: 1px solid #ccc;
+  padding: 8px;
+  border-radius: 12px;
+  cursor: pointer;
+}
 
+a{
+  color: black;
+}
 @keyframes newMessageCount {
   0% {
     opacity: 0;
