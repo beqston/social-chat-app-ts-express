@@ -55,7 +55,15 @@ router.use((req: Request, res: Response, next: NextFunction) => {
       };
       lastUpdates.set(userID, now);
 
-      
+          const secret = process.env.JWT_SECRET || "secretToken"
+          const  token = jwt.sign({id:userID}, secret, {expiresIn:"1d"})
+          res.cookie("token", token, {
+              httpOnly: true,       // prevents JS from reading it
+              secure: process.env.NODE_ENV === "production", // HTTPS only in prod
+              sameSite: "lax",      // CSRF protection
+              maxAge: 24 * 60 * 60 * 1000, // 1 day
+          });
+          req.session.userID = userID.toString();
       User.findByIdAndUpdate(userID, {
         lastActiveAt: new Date(),
         active: true

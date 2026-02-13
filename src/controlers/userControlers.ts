@@ -85,7 +85,7 @@ export const postLogin = async(req: Request, res: Response) => {
       })
     }
     const secret = process.env.JWT_SECRET || "secretToken"
-    const  token = jwt.sign({id:user.id}, secret, {expiresIn:"2d"})
+    const  token = jwt.sign({id:user.id}, secret, {expiresIn:"1d"})
     res.cookie("token", token, {
         httpOnly: true,       // prevents JS from reading it
         secure: process.env.NODE_ENV === "production", // HTTPS only in prod
@@ -259,7 +259,7 @@ export const createChat = async (req: Request, res: Response) => {
 }
 
 export const postMessage = async (req: Request, res: Response) => {
-  const { id: chatId } = req.params; // This is the Chat ID from the URL
+  const { id: chatId } = req.params;
   const token = req.cookies.token;
   if (!token) return res.status(401).json({ message: "Unauthorized" });
 
@@ -267,7 +267,7 @@ export const postMessage = async (req: Request, res: Response) => {
     const decoded = jwt.verify(token, process.env.JWT_SECRET!) as { id: string };
     const userID = new mongoose.Types.ObjectId(decoded.id);
 
-    // 1. Find the chat by ID
+    // 1. Find the chat and get participants
     let chat = await Chat.findById(chatId);
     if (!chat) return res.status(404).json({ message: "Chat Not Found!" });
 
@@ -278,9 +278,7 @@ export const postMessage = async (req: Request, res: Response) => {
       text: req.body.message
     });
 
-    // 1. Remove sender from 'deletedBy' so the chat reappears in their list
-    // 2. Update 'lastMessage' and 'updatedAt' for proper list sorting
-    // 3. Clears the entire array so the chat is visible to all participants
+    // 3. Update the Chat Metadata
     await Chat.findByIdAndUpdate(
       chatId,
       {
@@ -293,11 +291,21 @@ export const postMessage = async (req: Request, res: Response) => {
       { new: true }
     );
 
-    // use socket.io for message
+    // --- SOCKET.IO LOGIC ---
     const io = req.app.get("io");
+
+    // A. Update the Chat Window (for people currently looking at the messages)
     io.to(chatId).emit("receive_message", newMessage);
-    
-    // 3. Return the new message as JSON (Better than redirect for Chat Apps)
+
+    // B. Update the Header Count (for the recipient)
+    // Find the participant who is NOT the sender
+    const recipientId = chat.participants.find(p => p.toString() !== userID.toString());
+
+    if (recipientId && io) {
+      // Emit to the RECIPIENT'S ID, not the message ID
+      io.to(recipientId.toString()).emit("update_count");
+    }
+
     res.status(201).json({ success: true, data: newMessage });
 
   } catch (error) {
