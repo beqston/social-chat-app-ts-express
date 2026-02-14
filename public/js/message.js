@@ -1,5 +1,10 @@
-// 1. Initialize Socket
-const socket = io(); 
+// Global State Variables
+let lastChatsState = "";
+let lastMessagesState = "";
+let currentUserID = null;
+let chatWithUser = 'Someone';
+let typingTimeout;
+let socket;
 
 const messagesCNT = document.getElementById("messages");
 const allMessagesPM = document.getElementById("all-messages");
@@ -10,37 +15,170 @@ const sendBtn = document.getElementById("send-btn");
 const removeInputValue = document.getElementById("remove-chat-id");
 const typingStatus = document.getElementById("typing-status");
 
-// Global State Variables
-let lastChatsState = "";
-let lastMessagesState = "";
-let currentUserID = null;
-let chatWithUser = 'Someone'; // Default value
-let typingTimeout;
-
 // Get current Chat ID from URL
 const pathParts = window.location.pathname.split("/");
 const chat_id = pathParts[2];
 
-// JOIN THE ROOM
-if (chat_id) {
-    socket.emit("join_chat", chat_id);
+// MARK MESSAGES AS SEEN when user views the chat
+async function markMessagesAsSeen() {
+    if (!chat_id) return;
+    
+    try {
+        await fetch(`/api/v1/message/seen/${chat_id}`, {
+            method: 'POST',
+            credentials: 'include'
+        });
+    } catch (error) {
+        console.error("Failed to mark messages as seen:", error);
+    }
 }
 
-// LISTEN FOR REAL-TIME MESSAGES
-socket.on("receive_message", (newMessage) => {
-    // Only refresh if the message belongs to this open chat window
-    // We check both object and string formats just to be safe
-    const msgChatId = newMessage.chat._id || newMessage.chat;
+// Initialize socket after getting user ID
+async function initSocket() {
+    try {
+        const resUser = await fetch("/api/v1/me");
+        const userData = await resUser.json();
+        const userId = userData._id || userData;
+        currentUserID = userId;
+        
+        // Connect socket with userId
+        socket = io({
+            auth: {
+                userId: userId
+            }
+        });
+        
+        // JOIN THE ROOM
+        if (chat_id) {
+            socket.emit("join_chat", chat_id);
+        }
+        
+        // Set up socket listeners
+        setupSocketListeners();
+        
+        // Mark messages as seen on load
+        if (chat_id) {
+            markMessagesAsSeen();
+        }
+        
+    } catch (error) {
+        console.error("Failed to initialize socket:", error);
+    }
+}
+
+function setupSocketListeners() {
+    // LISTEN FOR REAL-TIME MESSAGES
+    socket.on("receive_message", (newMessage) => {
+        const msgChatId = newMessage.chat._id || newMessage.chat;
+        
+        if (msgChatId === chat_id) {
+            lastMessagesState = "";
+            getPMMessages();
+            markMessagesAsSeen();
+        }
+    });
+
+    // TYPING INDICATOR
+    socket.on("user_typing", (data) => {
+        if (data.chatId === chat_id) {
+            if (data.isTyping) {
+                typingStatus.innerText = `${chatWithUser} is typing...`;
+                typingStatus.classList.remove("none");
+            } else {
+                typingStatus.innerText = "";
+                typingStatus.classList.add("none");
+            }
+        }
+    });
+
+    socket.on("message_updated", (updatedMessage) => {
+        getPMMessages();
+    });
+
+    socket.on("message_deleted", (data) => {
+        if (data.chatId === chat_id) {
+            getPMMessages(); 
+        }
+    });
+
+    // REAL-TIME READ RECEIPTS - Update instantly without page refresh
+socket.on("messages_seen", (data) => {
+    console.log("========================================");
+    console.log("✅ Messages seen event received!");
+    console.log("Event data:", data);
+    console.log("Current chat_id:", chat_id);
+    console.log("Event chatId:", data.chatId);
+    console.log("Types - chat_id:", typeof chat_id, "data.chatId:", typeof data.chatId);
+    console.log("String comparison:", String(chat_id) === String(data.chatId));
+    console.log("Direct comparison:", data.chatId === chat_id);
     
-    if (msgChatId === chat_id) {
-        lastMessagesState = ""; // Force the UI to update
-        getPMMessages(); 
+    if (data.chatId === chat_id || String(data.chatId) === String(chat_id)) {
+        console.log("✓ Inside if block - chat IDs match!");
+        console.log("Looking for .message-own elements...");
+        
+        const messageBubbles = allMessagesPM.querySelectorAll('.message-own');
+        console.log("Found message bubbles:", messageBubbles.length);
+        console.log("Message bubbles NodeList:", messageBubbles);
+        
+        if (messageBubbles.length === 0) {
+            console.log("❌ No message bubbles found!");
+            console.log("allMessagesPM element:", allMessagesPM);
+            console.log("allMessagesPM innerHTML:", allMessagesPM.innerHTML);
+        }
+        
+        messageBubbles.forEach((bubble, index) => {
+            console.log(`\n--- Checking bubble ${index} ---`);
+            console.log("Bubble element:", bubble);
+            
+            const indicator = bubble.querySelector('.seen-indicator');
+            console.log("Indicator found:", !!indicator);
+            
+            if (indicator) {
+                console.log("Indicator element:", indicator);
+                console.log("Indicator classes:", indicator.classList.toString());
+                console.log("Has 'sent' class:", indicator.classList.contains('sent'));
+                console.log("Has 'read' class:", indicator.classList.contains('read'));
+                console.log("Current text:", indicator.textContent);
+                
+                if (indicator.classList.contains('sent')) {
+                    console.log(`🔄 UPDATING bubble ${index} from ✓ to ✓✓`);
+                    indicator.classList.remove('sent');
+                    indicator.classList.add('read');
+                    indicator.textContent = '✓✓';
+                    console.log("After update - classes:", indicator.classList.toString());
+                    console.log("After update - text:", indicator.textContent);
+                } else {
+                    console.log(`⏭️ Skipping bubble ${index} - already has 'read' class or missing 'sent' class`);
+                }
+            } else {
+                console.log(`❌ No indicator found in bubble ${index}`);
+            }
+        });
+        
+        console.log("\n📥 Forcing background refresh...");
+        lastMessagesState = "";
+        getPMMessages();
+    } else {
+        console.log("❌ Chat IDs don't match - skipping update");
+    }
+    console.log("========================================\n");
+});
+
+    socket.on("update_count", () => {
+        getPMMessages();
+    });
+}
+
+// Also mark as seen when window gets focus
+window.addEventListener('focus', () => {
+    if (chat_id) {
+        markMessagesAsSeen();
     }
 });
 
 // TYPING INDICATOR LOGIC
 messageInput.addEventListener("input", () => {
-    if (!chat_id) return;
+    if (!chat_id || !socket) return;
 
     socket.emit("typing", {
         chatId: chat_id,
@@ -50,39 +188,13 @@ messageInput.addEventListener("input", () => {
     clearTimeout(typingTimeout);
 
     typingTimeout = setTimeout(() => {
-        socket.emit("typing", {
-            chatId: chat_id,
-            isTyping: false
-        });
-    }, 2000);
-});
-
-socket.on("user_typing", (data) => {
-    //  Only show typing if it's for the CURRENT chat
-    if (data.chatId === chat_id) {
-        if (data.isTyping) {
-            typingStatus.innerText = `${chatWithUser} is typing...`;
-            typingStatus.classList.remove("none");
-        } else {
-            typingStatus.innerText = "";
-            typingStatus.classList.add("none");
+        if (socket) {
+            socket.emit("typing", {
+                chatId: chat_id,
+                isTyping: false
+            });
         }
-    }
-});
-
-// Listen for updates from other users (or yourself)
-socket.on("message_updated", (updatedMessage) => {
-    // Find the specific message bubble in the HTML
-    getPMMessages();
-});
-// Listen for deleted messages
-socket.on("message_deleted", (data) => {
-    //  Check if the deletion happened in the current chat window
-    if (data.chatId === chat_id) {
-        // This requires your message HTML to have IDs
-        // If you don't have IDs on elements, stick to Option A.
-        getPMMessages(); 
-    }
+    }, 2000);
 });
 
 // MAIN FETCH FUNCTION
@@ -95,15 +207,15 @@ async function getPMMessages() {
             fetch(`/api/v1/message/${chat_id}`)
         ]);
 
-        // get my ID
-        const userID = await resUser.json();
-        currentUserID = userID;
+        const userData = await resUser.json();
+        if (!currentUserID) {
+            currentUserID = userData._id || userData;
+        }
 
         const { data: chats } = await resChats.json();
         const { data: users } = await resUsers.json();
         const { data: messages } = await resMessage.json();
 
-        // Check if data actually changed to avoid flickering
         const currentChatsState = JSON.stringify(chats);
         const currentMessagesState = JSON.stringify(messages);
 
@@ -123,15 +235,14 @@ async function getPMMessages() {
             const lastMessageSender = users.find((user) => user._id == chat?.lastMessage?.sender);
             
             const chatUrl = `/message/${chat._id}`;
-            const isActive = window.location.pathname === chatUrl; // Boolean check
+            const isActive = window.location.pathname === chatUrl;
             
-            // Only update 'chatWithUser' if this is the active chat
             if (isActive) {
                 chatWithUser = username;
             }
 
             const userDiv = document.createElement('div');
-            userDiv.className = `see-message-cnt ${isActive ? "active" : ""}`; // Add active class if needed in CSS
+            userDiv.className = `see-message-cnt ${isActive ? "active" : ""}`;
             userDiv.innerHTML = `
                 <a href="${chatUrl}">
                     <div class="profile-image">${username[0].toUpperCase()}</div>
@@ -153,10 +264,9 @@ async function getPMMessages() {
                 </div>
             `;
             
-            // Toggle Options Menu
             const dialogDiv = userDiv.querySelector(".message-options");
             dialogDiv.addEventListener("click", (e) => {
-                e.preventDefault(); // Prevent link click
+                e.preventDefault();
                 userDiv.querySelector(".option-details").classList.remove("none");
                 removeInputValue.value = chat._id;
             });
@@ -165,11 +275,10 @@ async function getPMMessages() {
                 userDiv.querySelector(".option-details").classList.add("none");
             });
 
-            // Delete Chat Logic
             const deleteChatBTN = userDiv.querySelector(".delete-chat-btn");
             deleteChatBTN.addEventListener("click", async (e) => {
                 e.preventDefault();
-                e.stopPropagation(); // Stop bubble up
+                e.stopPropagation();
 
                 try {
                     const chatID = removeInputValue.value;
@@ -177,13 +286,12 @@ async function getPMMessages() {
 
                     if (!res.ok) throw new Error("Chat Not Found");
                     
-                    userDiv.remove(); // Remove immediately from UI
+                    userDiv.remove();
                     
-                    // If we deleted the open chat, go back to inbox
                     if (chatID === chat_id) {
                         window.location.href = "/messages";
                     } else {
-                        getPMMessages(); // Refresh list if we deleted a side chat
+                        getPMMessages();
                     }
                     
                 } catch (error) {
@@ -196,15 +304,33 @@ async function getPMMessages() {
 
         //  Render Main Messages (Conversation)
         allMessagesPM.innerHTML = ''; 
+        
+        const currentChat = chats.find(c => c._id === chat_id);
+        const otherParticipantId = currentChat ? currentChat.participants.find(p => p !== currentUserID) : null;
+
         messages.forEach((msg) => {
             const msgDiv = document.createElement('div');
-            // Use the global currentUserID for comparison
-            msgDiv.className = msg.sender === currentUserID ? 'message-own' : 'message-other'; 
+            
+            const senderId = msg.sender?._id || msg.sender;
+            
+            msgDiv.className = senderId === currentUserID ? 'message-own' : 'message-other'; 
             msgDiv.classList.add("message-buble");
+            
+            const isRead = senderId === currentUserID && 
+                           msg.readBy && 
+                           msg.readBy.some(read => {
+                               const readUserId = read.user?._id || read.user;
+                               return readUserId && readUserId.toString() === otherParticipantId?.toString();
+                           });
             
             msgDiv.innerHTML = `
                 <p>${msg.text}</p>
-                ${msg.sender === currentUserID ? `
+                ${senderId === currentUserID ? `
+                    <div class="message-status">
+                        <span class="seen-indicator ${isRead ? 'read' : 'sent'}">
+                            ${isRead ? '✓✓' : '✓'}
+                        </span>
+                    </div>
                     <div class="edit-delete-wrpapper">
                        <button class="edit-btn">Edit</button>
                        <button class="delete-btn">Delete</button>
@@ -212,17 +338,15 @@ async function getPMMessages() {
                 }
             `;
 
-            // Delete Single Message Logic
             const deleteBtn = msgDiv.querySelector('.delete-btn');
             if (deleteBtn) {
                 deleteBtn.onclick = async () => {
                     await fetch("/message/" + msg._id, { method: "DELETE" });
-                    lastMessagesState = ""; // Force refresh
+                    lastMessagesState = "";
                     getPMMessages(); 
                 };
             }
 
-            // Edit Single Message Logic
             const editBtn = msgDiv.querySelector('.edit-btn');
             if (editBtn) {
                 editBtn.onclick = () => {
@@ -236,16 +360,12 @@ async function getPMMessages() {
             allMessagesPM.appendChild(msgDiv);
         });
 
-        // Scroll to bottom
         allMessagesPM.scrollTop = allMessagesPM.scrollHeight;
 
     } catch (error) {
         console.error("Fetch failed:", error);
     }
 }
-
-// INITIAL LOAD
-getPMMessages();
 
 // HANDLE SEND FORM
 sendMessageForm.addEventListener("submit", async (e) => {
@@ -270,7 +390,7 @@ sendMessageForm.addEventListener("submit", async (e) => {
             editIdInput.value = ""; 
             sendBtn.textContent = "Send Message";
             
-            lastMessagesState = ""; // Force a re-render
+            lastMessagesState = "";
             getPMMessages();
         }
     } catch (err) {
@@ -278,4 +398,7 @@ sendMessageForm.addEventListener("submit", async (e) => {
     }
 });
 
-
+// Initialize socket first, then load messages
+initSocket().then(() => {
+    getPMMessages();
+});

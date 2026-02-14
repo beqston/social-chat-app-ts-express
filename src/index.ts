@@ -61,7 +61,15 @@ app.use(
 app.use(mainRouter);
 
 // Socket.io Connection Event
+// Socket.io Connection Event
 io.on("connection", (socket) => {
+  // Get userId from auth (you need to pass this from frontend)
+  const userId = socket.handshake.auth.userId || socket.handshake.query.userId;
+  
+  if (userId) {
+    socket.join(userId.toString());
+  }
+
   // 1. Join a specific chat room
   socket.on("join_chat", (chatId) => {
     socket.join(chatId);
@@ -69,18 +77,20 @@ io.on("connection", (socket) => {
 
   // 2. Handle sending messages (if you want to send via socket instead of HTTP)
   socket.on("send_message", (data) => {
-    // If 'data' contains the chatId, we send only to that room
     if (data.chatId) {
       io.to(data.chatId).emit("receive_message", data);
     } else {
       socket.broadcast.emit("receive_message", data); 
     }
   });
+
   socket.on("typing", (data) => {
-    // Broadcast to everyone in the room EXCEPT the person typing
     socket.to(data.chatId).emit("user_typing", data);
   });
-  socket.on("disconnect", () => {});
+
+  socket.on("disconnect", () => {
+    
+  });
 });
 
 

@@ -197,8 +197,21 @@
     cursor: pointer;
     width: 80px;
 }
+/* message send and seen */
+.message-status {
+    font-size: 12px;
+    color: #999;
+    margin-top: 4px;
+    text-align: right;
+}
 
+.seen-indicator.sent {
+    color: #999;
+}
 
+.seen-indicator.read {
+    color: #4fc3f7; /* Blue checkmarks when read */
+}
 
 @keyframes newMessage {
   0% {

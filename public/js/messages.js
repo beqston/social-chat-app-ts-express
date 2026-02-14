@@ -26,7 +26,7 @@ async function getMessages() {
             `; 
         }
 
-        if(lastDataString==currentDataString){
+        if(lastDataString == currentDataString){
             return;
         }
 
@@ -37,7 +37,7 @@ async function getMessages() {
             const otherUserId = chat.participants.find(user => user !== userID);
             const findUser = users.find(u => u._id === otherUserId);
             const username = findUser ? findUser.username : "Unknown";
-            const lastMessageSender = users.find((user)=>user._id==chat?.lastMessage?.sender);
+            const lastMessageSender = users.find((user) => user._id == chat?.lastMessage?.sender);
 
             const userDiv = document.createElement('div');
             userDiv.className = 'see-message-cnt';
@@ -46,48 +46,48 @@ async function getMessages() {
                     <div class="profile-image">${username[0].toUpperCase()}</div>
                     <div>
                         <h2>${username}</h2>
-                        ${lastMessageSender?`
+                        ${lastMessageSender ? `
                             <div class="last-message-cnt">
                                 <p class="last-message-profile">${lastMessageSender.username[0]}</p>
                                 <p class="last-message">${chat.lastMessage.text}</p>
-                            </div>`:""
+                            </div>` : ""
                         }
                     </div>
-                    ${chat.unreadCount > 0 ? `<p class="unread-message">${chat.unreadCount}</p>` : ""}
-                    </a>
-                    <div class="message-options">
-                        <span>...</span>
-                        <div class="option-details none">
-                            <button>Delete Chat</button>
-                        </div>
+                    ${chat.unreadCount > 0 ? `<span class="unread-message">${chat.unreadCount}</span>` : ""}
+                </a>
+                <div class="message-options">
+                    <span>...</span>
+                    <div class="option-details none">
+                        <button>Delete Chat</button>
                     </div>
+                </div>
             `;
 
             const dialogDiv = userDiv.querySelector(".message-options")
-            dialogDiv.addEventListener("click", ()=>{
+            dialogDiv.addEventListener("click", () => {
                 userDiv.querySelector(".option-details").classList.remove("none");
-                removeInputValue.value=chat._id;
+                removeInputValue.value = chat._id;
             });
 
-            dialogDiv.addEventListener("mouseleave", ()=>{
+            dialogDiv.addEventListener("mouseleave", () => {
                 userDiv.querySelector(".option-details").classList.add("none");
             });
 
             const deleteChatBTN = userDiv.querySelector("button");
 
-            deleteChatBTN.addEventListener("click", async(e)=>{
+            deleteChatBTN.addEventListener("click", async(e) => {
                 e.preventDefault();
                 try {
                     const chatID = removeInputValue.value
                     const res = await fetch(`/chat/${chatID}`, {
-                        method:"DELETE"
+                        method: "DELETE"
                     })
 
                     if(!res.ok){
-                        throw new Error("Chat Not Foound")
+                        throw new Error("Chat Not Found")
                     }
                     userDiv.remove();
-                    window.location.href ="/messages"
+                    window.location.href = "/messages"
                 } catch (error) {
                     console.log(error)
                 }
@@ -105,5 +105,18 @@ getMessages();
 
 // Refresh the list when a new message arrives anywhere
 socket.on("receive_message", () => {
-    getMessages(true);
+    lastDataString = ""; // Force refresh
+    getMessages();
+});
+
+// Refresh when messages are marked as seen (updates unread count)
+socket.on("update_count", () => {
+    lastDataString = ""; // Force refresh
+    getMessages();
+});
+
+// Also refresh when user switches back to this tab
+window.addEventListener('focus', () => {
+    lastDataString = ""; // Force refresh
+    getMessages();
 });

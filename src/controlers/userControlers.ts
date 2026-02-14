@@ -314,19 +314,42 @@ export const postMessage = async (req: Request, res: Response) => {
   }
 }
 
-export const getAllPMMessage = async(req: Request, res: Response)=>{
-  const decoded = jwt.verify(req.cookies.token, process.env.JWT_SECRET!) as { id: string };
-  const userID = new mongoose.Types.ObjectId(decoded.id)
-  const allMessagesPM = await Message.find({
-    chat:{
-      $in: await Chat.find({_id:req.params.id})
-    },
-    deletedFor:{$ne:userID}
-  })
+export const getAllPMMessage = async(req: Request, res: Response) => {
+  try {
+    const decoded = jwt.verify(req.cookies.token, process.env.JWT_SECRET!) as { id: string };
+    const userID = new mongoose.Types.ObjectId(decoded.id);
+    
+    // Validate chat ID
+    if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
+      return res.status(400).json({ message: "Invalid chat ID" });
+    }
 
-  res.json({
-    data:allMessagesPM,
-  });
+    // Verify user is a participant in this chat
+    const chat = await Chat.findOne({
+      _id: req.params.id,
+      participants: userID
+    });
+
+    if (!chat) {
+      return res.status(403).json({ message: "Unauthorized access to chat" });
+    }
+
+    const allMessagesPM = await Message.find({
+      chat: req.params.id,
+      deletedFor: { $ne: userID }
+    })
+      .populate('sender', 'username _id')       // Populate sender
+      .populate('readBy.user', 'username _id')  // Populate readBy.user
+      .sort({ createdAt: 1 });
+
+    res.json({
+      success: true,
+      data: allMessagesPM,
+    });
+  } catch (error) {
+    console.error("Get messages error:", error);
+    res.status(500).json({ message: "Error fetching messages" });
+  }
 }
 
 export const getMessage = async(req: Request, res: Response)=>{
@@ -486,3 +509,66 @@ export const deleteChat = async (req: Request, res: Response)=>{
     })
   }
 }
+
+export const markAsSeen = async (req: Request, res: Response) => {
+    const { id: chatId } = req.params;
+    const token = req.cookies.token;
+
+    if (!mongoose.Types.ObjectId.isValid(chatId)) {
+        return res.status(400).json({ message: "Invalid chat ID" });
+    }
+
+    try {
+        const decoded = jwt.verify(token, process.env.JWT_SECRET!) as { id: string };
+        const userID = new mongoose.Types.ObjectId(decoded.id);
+
+        // Update messages: Not sent by me, and I haven't read them yet
+        const result = await Message.updateMany(
+            { 
+                chat: chatId, 
+                sender: { $ne: userID }, 
+                "readBy.user": { $ne: userID } 
+            },
+            { 
+                $addToSet: { readBy: { user: userID, readAt: new Date() } } 
+            }
+        );
+
+        const io = req.app.get("io");
+        
+        // Always emit the event (even if modifiedCount is 0) to update UI in real-time
+        if (io) {
+            // Get all message senders in this chat (not just newly marked ones)
+            const messages = await Message.find({
+                chat: chatId,
+                sender: { $ne: userID }
+            }).distinct('sender');
+            
+            // Emit to the chat room (for all participants in the chat)
+            io.to(chatId).emit("messages_seen", { 
+                chatId, 
+                readBy: userID.toString(),
+                readAt: new Date() 
+            });
+            
+            // Also emit directly to each sender's personal room
+            messages.forEach(senderId => {
+                io.to(senderId.toString()).emit("messages_seen", { 
+                    chatId, 
+                    readBy: userID.toString(),
+                    readAt: new Date() 
+                });
+            });
+
+            // Tell the current user's header to update unread count badge
+            io.to(userID.toString()).emit("update_count");
+        }
+
+        res.status(200).json({ 
+            success: true, 
+            messagesMarked: result.modifiedCount 
+        });
+    } catch (error) {
+        res.status(500).json({ message: "Error marking messages as seen" });
+    }
+};

@@ -3,7 +3,7 @@ import path from "path";
 import User from "../model/user.ts";
 import isAuthUser, { tokenExpires } from "../middleware/auth.ts";
 import userValidation from "../utils/userValidation.ts";
-import { getChats, getLogin, getMe, getMessage, getMessages, getUsers, logout, postMessage, postLogin, postUser, createChat, getAllPMMessage, getMessagesCount, deleteMessage, updateMessage, deleteChat } from "../controlers/userControlers.ts";
+import { getChats, getLogin, getMe, getMessage, getMessages, getUsers, logout, postMessage, postLogin, postUser, createChat, getAllPMMessage, getMessagesCount, deleteMessage, updateMessage, deleteChat, markAsSeen } from "../controlers/userControlers.ts";
 import jwt from "jsonwebtoken"
 import isActive from "../middleware/isActive.ts";
 import mongoose from "mongoose";
@@ -116,6 +116,9 @@ router.route('/chat/:id').get(createChat).post(createChat).delete(deleteChat);
 // all my messages with populate sender and chat
 router.get('/api/v1/messages', getMessages);
 router.get('/api/v1/message/:id', getAllPMMessage);
-router.get("/api/messages/count", getMessagesCount)
+router.get("/api/messages/count", getMessagesCount);
+
+// message seen route
+router.post("/api/v1/message/seen/:id", markAsSeen)
 
 export default router;
