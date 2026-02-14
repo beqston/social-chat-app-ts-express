@@ -204,29 +204,6 @@ export const getMe = (req:Request, res:Response)=>{
   }
 }
 
-export const getMessages = async(req:Request, res:Response)=>{
-    try {
-      const decoded = jwt.verify(req.cookies.token, process.env.JWT_SECRET!) as { id: string };
-      const userID = new mongoose.Types.ObjectId(decoded.id)
-      const messages = await Message.find({
-        chat: {
-          $in: await Chat.find({ participants: userID }).distinct("_id")
-        }
-      })
-      .populate("sender")
-      .populate("chat");
-
-      res.json({
-        data:messages
-      })
-    } catch (error) {
-        res.status(500).json({
-            status:'fail',
-            message:error
-        })
-    }
-}
-
 export const createChat = async (req: Request, res: Response) => {
   const { id } = req.params;
   const decoded = jwt.verify(req.cookies.token, process.env.JWT_SECRET!) as { id: string };
@@ -522,53 +499,38 @@ export const markAsSeen = async (req: Request, res: Response) => {
         const decoded = jwt.verify(token, process.env.JWT_SECRET!) as { id: string };
         const userID = new mongoose.Types.ObjectId(decoded.id);
 
-        // Update messages: Not sent by me, and I haven't read them yet
+        // 1. Update Database
         const result = await Message.updateMany(
             { 
-                chat: chatId, 
-                sender: { $ne: userID }, 
-                "readBy.user": { $ne: userID } 
+              chat: chatId, 
+              sender: { $ne: userID }, 
+              "readBy.user": { $ne: userID } 
             },
             { 
-                $addToSet: { readBy: { user: userID, readAt: new Date() } } 
+              $addToSet: { readBy: { user: userID, readAt: new Date() } } 
             }
         );
 
+        // 2. Real-Time Notification
         const io = req.app.get("io");
-        
-        // Always emit the event (even if modifiedCount is 0) to update UI in real-time
         if (io) {
-            // Get all message senders in this chat (not just newly marked ones)
-            const messages = await Message.find({
-                chat: chatId,
-                sender: { $ne: userID }
-            }).distinct('sender');
-            
-            // Emit to the chat room (for all participants in the chat)
+            // SHOUT TO THE ROOM: "Someone just read the messages here!"
+            // The sender (User A) is listening to this room and will react.
             io.to(chatId).emit("messages_seen", { 
                 chatId, 
                 readBy: userID.toString(),
                 readAt: new Date() 
             });
-            
-            // Also emit directly to each sender's personal room
-            messages.forEach(senderId => {
-                io.to(senderId.toString()).emit("messages_seen", { 
-                    chatId, 
-                    readBy: userID.toString(),
-                    readAt: new Date() 
-                });
-            });
 
-            // Tell the current user's header to update unread count badge
-            io.to(userID.toString()).emit("update_count");
+            // If we actually updated unread messages, update the total badge count
+            if (result.modifiedCount > 0) {
+              io.to(userID.toString()).emit("update_count");
+            }
         }
 
-        res.status(200).json({ 
-            success: true, 
-            messagesMarked: result.modifiedCount 
-        });
+        res.status(200).json({ success: true, messagesMarked: result.modifiedCount });
     } catch (error) {
         res.status(500).json({ message: "Error marking messages as seen" });
     }
 };
+

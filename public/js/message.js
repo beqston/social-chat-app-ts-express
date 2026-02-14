@@ -101,67 +101,27 @@ function setupSocketListeners() {
         }
     });
 
-    // REAL-TIME READ RECEIPTS - Update instantly without page refresh
+// REAL-TIME READ RECEIPTS - Update instantly without page refresh
 socket.on("messages_seen", (data) => {
-    console.log("========================================");
-    console.log("✅ Messages seen event received!");
-    console.log("Event data:", data);
-    console.log("Current chat_id:", chat_id);
-    console.log("Event chatId:", data.chatId);
-    console.log("Types - chat_id:", typeof chat_id, "data.chatId:", typeof data.chatId);
-    console.log("String comparison:", String(chat_id) === String(data.chatId));
-    console.log("Direct comparison:", data.chatId === chat_id);
-    
     if (data.chatId === chat_id || String(data.chatId) === String(chat_id)) {
-        console.log("✓ Inside if block - chat IDs match!");
-        console.log("Looking for .message-own elements...");
-        
         const messageBubbles = allMessagesPM.querySelectorAll('.message-own');
-        console.log("Found message bubbles:", messageBubbles.length);
-        console.log("Message bubbles NodeList:", messageBubbles);
         
-        if (messageBubbles.length === 0) {
-            console.log("❌ No message bubbles found!");
-            console.log("allMessagesPM element:", allMessagesPM);
-            console.log("allMessagesPM innerHTML:", allMessagesPM.innerHTML);
-        }
-        
-        messageBubbles.forEach((bubble, index) => {
-            console.log(`\n--- Checking bubble ${index} ---`);
-            console.log("Bubble element:", bubble);
+        messageBubbles.forEach((bubble) => {
             
             const indicator = bubble.querySelector('.seen-indicator');
-            console.log("Indicator found:", !!indicator);
             
             if (indicator) {
-                console.log("Indicator element:", indicator);
-                console.log("Indicator classes:", indicator.classList.toString());
-                console.log("Has 'sent' class:", indicator.classList.contains('sent'));
-                console.log("Has 'read' class:", indicator.classList.contains('read'));
-                console.log("Current text:", indicator.textContent);
-                
                 if (indicator.classList.contains('sent')) {
-                    console.log(`🔄 UPDATING bubble ${index} from ✓ to ✓✓`);
                     indicator.classList.remove('sent');
                     indicator.classList.add('read');
                     indicator.textContent = '✓✓';
-                    console.log("After update - classes:", indicator.classList.toString());
-                    console.log("After update - text:", indicator.textContent);
-                } else {
-                    console.log(`⏭️ Skipping bubble ${index} - already has 'read' class or missing 'sent' class`);
-                }
-            } else {
-                console.log(`❌ No indicator found in bubble ${index}`);
-            }
+                } 
+            } 
         });
         
-        console.log("\n📥 Forcing background refresh...");
         lastMessagesState = "";
         getPMMessages();
-    } else {
-        console.log("❌ Chat IDs don't match - skipping update");
-    }
-    console.log("========================================\n");
+    } 
 });
 
     socket.on("update_count", () => {

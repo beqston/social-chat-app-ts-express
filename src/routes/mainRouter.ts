@@ -113,11 +113,10 @@ router.get('/api/v1/chats', getChats);
 router.get('/api/v1/me', getMe)
 router.route('/message/:id').post(postMessage).patch(updateMessage).delete(deleteMessage);
 router.route('/chat/:id').get(createChat).post(createChat).delete(deleteChat);
-// all my messages with populate sender and chat
-router.get('/api/v1/messages', getMessages);
+
+// get all pm message in chat
 router.get('/api/v1/message/:id', getAllPMMessage);
 router.get("/api/messages/count", getMessagesCount);
-
 // message seen route
 router.post("/api/v1/message/seen/:id", markAsSeen)
 
