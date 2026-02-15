@@ -26,7 +26,6 @@ function updateTitleDisplay() {
 
 // --- 2. Sync Function ---
 async function syncMessages() {
-    console.log("Socket received! Syncing count..."); // Check your console for this!
     try {
         const response = await fetch('/api/messages/count');
         const data = await response.json();

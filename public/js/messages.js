@@ -45,7 +45,10 @@ async function getMessages() {
                 <a href="/message/${chat._id}">
                     <div class="profile-image">${username[0].toUpperCase()}</div>
                     <div>
-                        <h2>${username}</h2>
+                        <div class="username-cnt">
+                            <h2>${username}</h2>
+                            <div class="${findUser.active?"active":"disable"}"></div>
+                        </div>
                         ${lastMessageSender ? `
                             <div class="last-message-cnt">
                                 <p class="last-message-profile">${lastMessageSender.username[0]}</p>

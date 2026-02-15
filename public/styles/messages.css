@@ -213,6 +213,25 @@
     color: #4fc3f7; /* Blue checkmarks when read */
 }
 
+
+/* active sing */
+.username-cnt{
+    display: flex;
+    align-items: center;
+    column-gap: 12px;
+}
+.active, .disable{
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+}
+.active{
+    background-color: green;
+}
+.disable{
+    background-color: red;
+}
+
 @keyframes newMessage {
   0% {
     opacity: 0;
