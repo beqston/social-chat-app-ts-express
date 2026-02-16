@@ -61,12 +61,15 @@ async function getUsers() {
         users.data.forEach(async(user) => {
             // Create a container for each user
             const userDiv = document.createElement('div');
-            userDiv.className = 'green';
+            userDiv.className = 'user-cnt';
             userDiv.innerHTML = `
                 <h2>${user.username}</h2>
                 <h2>${user.email}</h2>
-                <p>${user.active?"Online":"Offline"}</p>
-                <p>${user.lastActiveAgo}</p>
+                <div class="active-cnt">
+                    ${user.active?"<div class='onsite'></div>":"<div class='ofline'></div>"}
+                    <p>${user.lastActiveAgo}</p>
+                </div>
+
                 <button>Send Message</button>
                 <a href="/chat/${user._id}">link</a>
             `;
