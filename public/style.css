@@ -7,3 +7,8 @@
 a{
     text-decoration: none;
 }
+
+#profile{
+    padding: 22px;
+    border: 1px solid indianred;
+}
