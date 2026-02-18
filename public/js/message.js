@@ -14,6 +14,7 @@ const editIdInput = document.getElementById("edit-message-id");
 const sendBtn = document.getElementById("send-btn");
 const removeInputValue = document.getElementById("remove-chat-id");
 const typingStatus = document.getElementById("typing-status");
+const activeTime = document.getElementById("active-time");
 
 // Get current Chat ID from URL
 const pathParts = window.location.pathname.split("/");
@@ -203,6 +204,7 @@ async function getPMMessages() {
 
             const userDiv = document.createElement('div');
             userDiv.className = `see-message-cnt ${isActive ? "active" : ""}`;
+            activeTime.textContent=findUser.lastActiveAgo;
             userDiv.innerHTML = `
                 <a href="${chatUrl}">
                     <div class="profile-image">${username[0].toUpperCase()}</div>
@@ -277,11 +279,11 @@ async function getPMMessages() {
             msgDiv.classList.add("message-buble");
             
             const isRead = senderId === currentUserID && 
-                           msg.readBy && 
-                           msg.readBy.some(read => {
-                               const readUserId = read.user?._id || read.user;
-                               return readUserId && readUserId.toString() === otherParticipantId?.toString();
-                           });
+            msg.readBy && 
+            msg.readBy.some(read => {
+                const readUserId = read.user?._id || read.user;
+                return readUserId && readUserId.toString() === otherParticipantId?.toString();
+            });
             
             msgDiv.innerHTML = `
                 <p>${msg.text}</p>

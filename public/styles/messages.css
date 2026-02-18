@@ -49,6 +49,7 @@
     flex-direction: column;
     height: 90%;
     max-height: 80ch;
+    position: relative;
 }
 
 /* messages list */
@@ -231,7 +232,16 @@
 .disable{
     background-color: red;
 }
-
+#active-time{
+    width: fit-content;
+    position: absolute;
+    z-index: 10;
+    right: 50%;
+    text-align: center;
+    font-weight: 400;
+    font-size: 18px;
+    color: olivedrab;
+}
 @keyframes newMessage {
   0% {
     opacity: 0;
