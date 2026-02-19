@@ -133,3 +133,11 @@ main{
   line-height: 1rem;
   color: rgba(156, 163, 175, 1);
 }
+
+
+#error-message{
+  color: red;
+  margin-bottom: 4px;
+  transform: translateY(-8px);
+  display: none;
+}

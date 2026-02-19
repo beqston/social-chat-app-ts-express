@@ -69,6 +69,12 @@ router.use((req: Request, res: Response, next: NextFunction) => {
 
 // update token
 router.use(async(req:Request,res:Response,next:NextFunction)=>{
+
+  const token = req.cookies?.token;
+  // if no token at all, skip
+  if (!token) return next();
+
+  // chek if is auth user
   const isAuth = isAuthUser(req);
   if (!isAuth) return next();
     try {

@@ -4,7 +4,6 @@ import User from "../model/user.ts";
 export default function isActive() {
 
   const INACTIVE_THRESHOLD = 7 * 60 * 1000; 
-  
   const CHECK_INTERVAL = 2 * 60 * 1000; 
 
   const runCleanup = async () => {
@@ -21,6 +20,5 @@ export default function isActive() {
       setTimeout(runCleanup, CHECK_INTERVAL);
     }
   };
-
   runCleanup();
 }
