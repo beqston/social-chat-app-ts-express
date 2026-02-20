@@ -1,0 +1,54 @@
+main{
+    position: relative;
+}
+#profile{
+    padding: 22px;
+    background-color: skyblue;
+    height: 100vh;
+    position: relative;
+}
+#profile-details-cnt{
+    width: 48%;
+    height: 80%;
+    background-color: rgba(0, 0, 0, 0.777);
+    padding: 20px;
+    border-radius: 8px;
+    position: relative;
+}
+
+#profile-details-cnt .username-email{
+    display: grid;
+    grid-template-columns: 1fr 4fr;
+    margin-bottom: 2rem;
+}
+.profile-img{
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    background-color: green;
+    color: white;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+#profile-details-cnt h2{
+    color: whitesmoke;
+    line-height: 28px;
+}
+
+#profile-details-cnt form{
+    width: 100%;
+    display: grid;
+    grid-template-columns: 1fr;
+    row-gap: 8px;
+}
+#profile-details-cnt form input{
+    outline: none;
+    padding: 12px;
+    border-radius: 8px;
+}
+#profile-details-cnt form button{
+    padding: 12px;
+    border-radius: 8px;
+    cursor: pointer;
+}
