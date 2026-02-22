@@ -30,15 +30,3 @@ export function tokenExpires(req: Request, res: Response, next: NextFunction) {
     return next()
   }
 }
-
-export const AutUserFullCheck = (req:Request)=>{
-    const user = req?.cookies?.user;
-    const token = req?.cookies?.token;
-    const headerUser = req.headers.authorization;
-
-    if(user && headerUser && token){
-       return true;
-    }else{
-        return false;
-    }
-}

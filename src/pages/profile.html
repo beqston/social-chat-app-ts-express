@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Messages Page</title>
+    <title>Profile Page</title>
     <link rel="stylesheet" href="/style.css">
     <link rel="stylesheet" href="/styles/profile.css">
     <link rel="stylesheet" href="/styles/header.css">
@@ -11,6 +11,16 @@
 <body>
 <main>
     <div id="profile"></div>
+    <!-- Toast Modal For Notification -->
+    <div id="toast-modal"></div>
+    <!-- Delete Modal Toast-->
+    <div id="delete-modal">
+        <p>Do you wanna delete profile?</p>
+        <div class="question-cnt">
+            <button id="delete-profile">Yes</button>
+            <button id="close-modal">No</button>
+        </div>
+    </div>
 </main>
 <script src="/socket.io/socket.io.js"></script>
 <script src="/js/profile.js"></script>    

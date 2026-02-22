@@ -67,6 +67,7 @@ button:hover {
   position: relative;
 }
 
+
 .form-group label {
   position: absolute;
   top: 0;
@@ -83,6 +84,5 @@ button:hover {
   background: #212121 padding-box;
   padding: 10px 0 0 0;
   color: #bdb8b8;
-
   font-size: 12px;
 }

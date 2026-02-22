@@ -98,7 +98,7 @@ userSchema.pre("validate", function(next){
     }
   }
   next();
-})
+});
 
 userSchema.virtual('lastActiveAgo').get(function () {
   if (!this.lastActiveAt) return null;

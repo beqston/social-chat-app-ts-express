@@ -20,6 +20,7 @@ main{
     display: grid;
     grid-template-columns: 1fr 4fr;
     margin-bottom: 2rem;
+    column-gap: 12px;
 }
 .profile-img{
     width: 80px;
@@ -30,6 +31,7 @@ main{
     display: flex;
     justify-content: center;
     align-items: center;
+    font-size: 3rem;
 }
 #profile-details-cnt h2{
     color: whitesmoke;
@@ -52,3 +54,56 @@ main{
     border-radius: 8px;
     cursor: pointer;
 }
+
+#delete-btn{
+    padding: 12px;
+    position: absolute;
+    bottom: 4px;
+    right: 4px;
+    background-color: darkred;
+    color: red;
+    border-radius: 12px;
+    cursor: pointer;
+}
+
+#delete-modal{
+    display: none;
+    width: 480px;
+    height: fit-content;
+    position: absolute;
+    padding: 12px;
+    top: 20%;
+    left: 20%;
+    z-index: 100;
+    background-color: aliceblue;
+    color: black;
+    font-weight: 700;
+    gap: 22px;
+    font-size: 2rem;
+    place-items: center;
+    border-radius: 20px;
+}
+
+#delete-modal .question-cnt{
+    display: flex;
+    justify-content:center;
+    column-gap: 20%;
+}
+
+#delete-modal .question-cnt button{
+    padding: 12px;
+    font-size: 18px;
+    cursor: pointer;
+}
+
+@media screen and (max-width: 930px) {
+    #profile-details-cnt{
+        width: 90%;
+        margin: 0 auto;
+    }
+    #delete-modal{
+        width: 80%;
+        left: 10%;
+        font-size: 22px;
+    }
+ }

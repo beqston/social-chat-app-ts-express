@@ -7,10 +7,12 @@ import bcrypt from "bcrypt"
 import Message from "../model/messages.ts";
 import Chat from "../model/chat.ts";
 import mongoose from "mongoose";
+import isAuthUser from "../middleware/auth.ts";
 
 export const postUser = async (req: Request, res: Response) => {
+  
     try {
-      const errors= validationResult(req.body)
+      const errors= validationResult(req)
       if(!errors.isEmpty()){
         return res.status(400).json({
         errors: errors.array(),
@@ -49,10 +51,10 @@ export const postUser = async (req: Request, res: Response) => {
             updatedAt: user.updatedAt
         }});
     } catch (error: any) {
+      console.log(error)
       return  res.status(500).json({ error: error.message });
     }
 };
-
 
 export const logout = (req: Request, res: Response) => {
   req.session.destroy((err) => {
@@ -527,10 +529,92 @@ export const markAsSeen = async (req: Request, res: Response) => {
               io.to(userID.toString()).emit("update_count");
             }
         }
-
         res.status(200).json({ success: true, messagesMarked: result.modifiedCount });
     } catch (error) {
         res.status(500).json({ message: "Error marking messages as seen" });
     }
 };
 
+
+export const updateUserPassword = async (req: Request, res: Response) => {
+  const { id } = req.params;
+  const { password, confirmPassword } = req.body;
+
+  try {
+    // chek is auth 
+    const isAutUserCheck = isAuthUser(req);
+    if (!isAutUserCheck) {
+      return res.status(401).json({ message: "User is not authorized" });
+    }
+    // find user
+    const user = await User.findById(id);
+    if (!user) {
+      return res.status(404).json({ message: "User not found!" });
+    }
+
+    if (!password?.trim() || !confirmPassword?.trim()) {
+      return res.status(400).json({ message: "Password fields cannot be empty!" });
+    }
+
+    if (password !== confirmPassword) {
+      return res.status(400).json({ message: "Passwords do not match!" });
+    }
+
+    const hashedPassword = await bcrypt.hash(password, 12);
+    user.password = hashedPassword;
+    user.set('confirmPassword', hashedPassword);
+    await user.save();
+
+    return res.status(200).json({
+      status: "success",
+      message: "User password updated!"
+    });
+  } catch (error) {
+    res.status(500).json({ message: "Internal server error" });
+  }
+};
+
+export const deleteUserProfile = async (req: Request, res: Response) => {
+  const { id } = req.params;
+  try {
+    // check is auth
+    const isAutUserCheck = isAuthUser(req);
+    if (!isAutUserCheck) {
+      return res.status(401).json({ message: "User is not authorized" });
+    }
+
+    // find user
+    const user = await User.findById(id);
+    if (!user) {
+      return res.status(404).json({ message: "User not found!" });
+    }
+
+    // delete all messages by user
+    await Message.deleteMany({ sender: id });
+
+    // delete all chats where user is a member
+    await Chat.deleteMany({ members: id });
+
+    // find and delete user
+    await User.findByIdAndDelete(id);
+
+    // clear cookie and session
+    req.session.destroy((err) => {
+      if (err) {
+        return res.status(500).json({ message: "Failed to clear session" });
+      }
+
+      res.clearCookie("sid");
+      res.clearCookie("token");
+      return res.json({ message: "Session cleared successfully" });
+    });
+
+    return res.status(200).json({
+      status: "success",
+      message: "User Deleted!"
+    });
+
+  } catch (error) {
+    res.status(500).json({ message: "Internal server error" });
+  }
+}

@@ -34,9 +34,9 @@ app.set("io", io);
 // ✅ Serve static files from root-level /public
 app.use(express.static(path.join(__dirname, '../public')));
 
+app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-app.use(cors());
 app.use(cookieParser())
 connectDB(process.env.MONGO_URI)
 
@@ -60,7 +60,6 @@ app.use(
 );
 app.use(mainRouter);
 
-// Socket.io Connection Event
 // Socket.io Connection Event
 io.on("connection", (socket) => {
   // Get userId from auth (you need to pass this from frontend)
