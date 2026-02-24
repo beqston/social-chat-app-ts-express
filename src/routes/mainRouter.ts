@@ -21,7 +21,7 @@ router.use((req:Request, res:Response, next:NextFunction)=>{
 // check if is auth
 router.use((req:Request, res:Response, next:NextFunction)=>{
   const isAuth = isAuthUser(req);
-  const publicPaths = ['/login', '/register', "/add-user"];
+  const publicPaths = ['/login', '/register', "/add-user", "/forgot-password"];
   if(publicPaths.includes(req.path)){
     if(isAuth){
       res.redirect('/');
@@ -136,6 +136,10 @@ router.get('/users', async(req: Request, res: Response) => {
 
 router.get('/register', (req: Request, res: Response) => {
   res.sendFile(path.join(__dirname, '../pages/register.html'));
+});
+
+router.get('/forgot-password', (req: Request, res: Response) => {
+  res.sendFile(path.join(__dirname, '../pages/forgot.html'));
 });
 
 router.get('/message/:id', getMessage)
