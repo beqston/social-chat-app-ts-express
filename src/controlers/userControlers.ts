@@ -8,6 +8,7 @@ import Message from "../model/messages.ts";
 import Chat from "../model/chat.ts";
 import mongoose from "mongoose";
 import isAuthUser from "../middleware/auth.ts";
+import nodemailer from "nodemailer";
 
 export const postUser = async (req: Request, res: Response) => {
   
@@ -616,5 +617,47 @@ export const deleteUserProfile = async (req: Request, res: Response) => {
 
   } catch (error) {
     res.status(500).json({ message: "Internal server error" });
+  }
+}
+
+
+export const postForgotPassword = async(req: Request, res: Response) => {
+  const {email} = req.body;
+
+  try {
+    const user = await User.findOne({email});
+    if(!user){
+      return res.status(401).json({
+        message:"User not found!!"
+      })
+    };
+
+    // send mail to user
+    // Create transporter
+    const transporter = nodemailer.createTransport({
+      service: 'gmail',
+      auth: {
+        user: 'your@gmail.com',
+        pass: 'your_app_password' // Use App Password, not your real password
+      }
+    });
+
+    // Send email
+    const sendEmail = async () => {
+      const mailOptions = {
+        from: 'your@gmail.com',
+        to: email,
+        subject: "Reset Parrol In Chat App",
+        text: "You Can reset password in this link", // plain text
+        // html: '<h1>Hello</h1>' // or HTML
+      };
+
+      await transporter.sendMail(mailOptions);
+    };
+    
+  } catch (error) {
+    res.status(500).json({
+      message:"Interval server error!"
+    })
   }
 }

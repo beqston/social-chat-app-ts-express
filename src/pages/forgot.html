@@ -10,10 +10,10 @@
     <main>
         <div class="form-container">
             <p class="title">Reset Password</p>
-            <form class="form" action="/login" method="POST">
+            <form id="reset" class="form" action="/forgot-password" method="POST">
                 <div class="input-group">
-                    <label for="username">Username</label>
-                    <input type="text" name="username" id="username" placeholder="Please Enter Username">
+                    <label for="username">Email</label>
+                    <input type="email" name="email" id="email" placeholder="Please Enter Email">
                 </div>
                 <p id="error-message"></p>
                 <br/>
@@ -24,8 +24,5 @@
             </p>
         </div>
     </main>
-
-    <script src="/js/login.js"></script>
-
 </body>
 </html>

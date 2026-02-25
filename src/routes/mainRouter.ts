@@ -3,14 +3,13 @@ import path from "path";
 import User from "../model/user.ts";
 import isAuthUser, { tokenExpires } from "../middleware/auth.ts";
 import userValidation from "../utils/userValidation.ts";
-import { getChats, getLogin, getMe, getMessage, getUsers, logout, postMessage, postLogin, postUser, createChat, getAllPMMessage, getMessagesCount, deleteMessage, updateMessage, deleteChat, markAsSeen, updateUserPassword, deleteUserProfile } from "../controlers/userControlers.ts";
+import { getChats, getLogin, getMe, getMessage, getUsers, logout, postMessage, postLogin, postUser, createChat, getAllPMMessage, getMessagesCount, deleteMessage, updateMessage, deleteChat, markAsSeen, updateUserPassword, deleteUserProfile, postForgotPassword } from "../controlers/userControlers.ts";
 import jwt from "jsonwebtoken"
 import isActive from "../middleware/isActive.ts";
 import mongoose from "mongoose";
 import bcrypt from "bcrypt"
 import Chat from "../model/chat.ts";
 import Message from "../model/messages.ts";
-import { error } from "console";
 
 const router = express.Router();
 
@@ -117,16 +116,13 @@ router.use((req:Request,res:Response,next:NextFunction)=>{
 });
 
 router.get('/', (req: Request, res: Response) => {
-
   res.sendFile(path.join(__dirname, '../pages/index.html'));
 });
 
 router.get('/messages', (req: Request, res: Response) => {
-
   res.sendFile(path.join(__dirname, '../pages/messages.html'));
 });
 router.get('/profile', (req: Request, res: Response) => {
-
   res.sendFile(path.join(__dirname, '../pages/profile.html'));
 });
 
@@ -141,6 +137,9 @@ router.get('/register', (req: Request, res: Response) => {
 router.get('/forgot-password', (req: Request, res: Response) => {
   res.sendFile(path.join(__dirname, '../pages/forgot.html'));
 });
+
+// post forgot password
+router.post('/forgot-password', postForgotPassword);
 
 router.get('/message/:id', getMessage)
 router.route('/login').get(getLogin).post(postLogin);
