@@ -8,7 +8,8 @@ import Message from "../model/messages.ts";
 import Chat from "../model/chat.ts";
 import mongoose from "mongoose";
 import isAuthUser from "../middleware/auth.ts";
-import nodemailer from "nodemailer";
+import crypto from "crypto";
+import SendEmail from "../utils/nodemailer.ts";
 
 export const postUser = async (req: Request, res: Response) => {
   
@@ -620,7 +621,6 @@ export const deleteUserProfile = async (req: Request, res: Response) => {
   }
 }
 
-
 export const postForgotPassword = async(req: Request, res: Response) => {
   const {email} = req.body;
 
@@ -632,32 +632,65 @@ export const postForgotPassword = async(req: Request, res: Response) => {
       })
     };
 
-    // send mail to user
-    // Create transporter
-    const transporter = nodemailer.createTransport({
-      service: 'gmail',
-      auth: {
-        user: 'your@gmail.com',
-        pass: 'your_app_password' // Use App Password, not your real password
-      }
-    });
+    // Generate token
+    const resetToken = crypto.randomBytes(32).toString("hex");
 
-    // Send email
-    const sendEmail = async () => {
-      const mailOptions = {
-        from: 'your@gmail.com',
-        to: email,
-        subject: "Reset Parrol In Chat App",
-        text: "You Can reset password in this link", // plain text
-        // html: '<h1>Hello</h1>' // or HTML
-      };
-
-      await transporter.sendMail(mailOptions);
-    };
+    // create hash token before saving to DB
+    const hashedToken = crypto.createHash("sha256").update(resetToken).digest("hex");
     
+    user.resetPasswordToken = hashedToken;
+    user.resetPasswordExpire = new Date(Date.now() + 10 * 60 * 1000);
+    await user.save()
+
+    // send reset url
+    const resetURL = `${process.env.CLIENT_URL}/reset-password/${resetToken}`;
+
+    // send mail to user
+    await SendEmail(user.email, resetURL)
+    
+    res.status(200).json({ msg: 'If this email exists, a reset link has been sent.' });
+
   } catch (error) {
     res.status(500).json({
       message:"Interval server error!"
     })
   }
-}
+};
+
+export const postResetPassword = async (req: Request, res: Response) => {
+  const { token } = req.params;
+  const { password } = req.body;
+
+  try {
+    const hashedToken = crypto
+      .createHash('sha256')
+      .update(token)
+      .digest('hex');
+
+    const user = await User.findOne({
+      resetPasswordToken: hashedToken,
+      resetPasswordExpire: { $gt: Date.now() }
+    }).select('+password'); // ✅ need to select password since select:false
+
+    if (!user) {
+      return res.status(400).json({ msg: 'Invalid or expired token' });
+    }
+
+    if (password.length < 8) {
+      return res.status(400).json({ msg: 'Password must be at least 8 characters' });
+    }
+
+    user.password = password;                    // ✅ raw password, pre save will hash
+    (user as any)._isPasswordReset = true;       // ✅ bypass confirmPassword check
+    user.resetPasswordToken = undefined;
+    user.resetPasswordExpire = undefined;
+
+    await user.save();
+
+    res.status(200).json({ msg: 'Password reset successful' });
+
+  } catch (error) {
+    console.log("❌ Error:", error);
+    res.status(500).json({ msg: 'Server error' });
+  }
+};

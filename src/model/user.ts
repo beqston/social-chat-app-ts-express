@@ -7,8 +7,11 @@ export interface IUser extends Document {
   email: string;
   password: string;
   _confirmPassword?: string;
+  _isPasswordReset?: boolean; 
   active: boolean;
   lastActiveAt: Date;
+  resetPasswordToken?: string;
+  resetPasswordExpire?: Date;
   lastActiveAgo?: string;
   createdAt?: Date;
   updatedAt?: Date;
@@ -51,9 +54,11 @@ const userSchema = new Schema<IUser>({
         default:true
     },
     lastActiveAt: {
-        type: Date,
-        default: Date.now
+      type: Date,
+      default: Date.now
   },
+  resetPasswordToken: { type: String },
+  resetPasswordExpire: { type: Date }
   },
 {
     timestamps:true,
@@ -77,8 +82,11 @@ userSchema.pre("save", async function (next) {
 
   if (!user.isModified("password")) return next();
 
-  if (user._confirmPassword && user.password !== user._confirmPassword) {
-    return next(new Error("Passwords do not match"));
+  // ✅ Skip confirmPassword check on password reset
+  if(!(user as any)._isPasswordReset){
+    if (user._confirmPassword && user.password !== user._confirmPassword) {
+      return next(new Error("Passwords do not match"));
+    }
   }
 
   user.password = await bcrypt.hash(user.password, 12);
@@ -88,6 +96,9 @@ userSchema.pre("save", async function (next) {
 //check validate virtual confirmPassword field
 userSchema.pre("validate", function(next){
   if(this.isModified("password")){
+
+    // ✅ Skip confirmPassword validation on password reset
+    if((this as any)._isPasswordReset) return next();
 
     if(!this._confirmPassword){
       this.invalidate('confirmPassword', 'Confirm password is required');

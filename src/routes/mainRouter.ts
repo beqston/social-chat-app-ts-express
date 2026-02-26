@@ -3,7 +3,7 @@ import path from "path";
 import User from "../model/user.ts";
 import isAuthUser, { tokenExpires } from "../middleware/auth.ts";
 import userValidation from "../utils/userValidation.ts";
-import { getChats, getLogin, getMe, getMessage, getUsers, logout, postMessage, postLogin, postUser, createChat, getAllPMMessage, getMessagesCount, deleteMessage, updateMessage, deleteChat, markAsSeen, updateUserPassword, deleteUserProfile, postForgotPassword } from "../controlers/userControlers.ts";
+import { getChats, getLogin, getMe, getMessage, getUsers, logout, postMessage, postLogin, postUser, createChat, getAllPMMessage, getMessagesCount, deleteMessage, updateMessage, deleteChat, markAsSeen, updateUserPassword, deleteUserProfile, postForgotPassword, postResetPassword } from "../controlers/userControlers.ts";
 import jwt from "jsonwebtoken"
 import isActive from "../middleware/isActive.ts";
 import mongoose from "mongoose";
@@ -21,7 +21,7 @@ router.use((req:Request, res:Response, next:NextFunction)=>{
 router.use((req:Request, res:Response, next:NextFunction)=>{
   const isAuth = isAuthUser(req);
   const publicPaths = ['/login', '/register', "/add-user", "/forgot-password"];
-  if(publicPaths.includes(req.path)){
+  if(publicPaths.includes(req.path) || req.url.startsWith("/reset-password/")){
     if(isAuth){
       res.redirect('/');
       return next()
@@ -140,6 +140,14 @@ router.get('/forgot-password', (req: Request, res: Response) => {
 
 // post forgot password
 router.post('/forgot-password', postForgotPassword);
+
+// get reset password page
+router.get('/reset-password/:token', (req: Request, res: Response) => {
+  res.sendFile(path.join(__dirname, '../pages/resetPassword.html'));
+});
+
+// POST route too
+router.post('/reset-password/:token', postResetPassword);
 
 router.get('/message/:id', getMessage)
 router.route('/login').get(getLogin).post(postLogin);
