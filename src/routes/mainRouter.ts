@@ -2,14 +2,10 @@ import express, { Request, Response, NextFunction } from "express";
 import path from "path";
 import User from "../model/user.ts";
 import isAuthUser, { tokenExpires } from "../middleware/auth.ts";
-import userValidation from "../utils/userValidation.ts";
+import userValidation, { passwordRules } from "../utils/userValidation.ts";
 import { getChats, getLogin, getMe, getMessage, getUsers, logout, postMessage, postLogin, postUser, createChat, getAllPMMessage, getMessagesCount, deleteMessage, updateMessage, deleteChat, markAsSeen, updateUserPassword, deleteUserProfile, postForgotPassword, postResetPassword } from "../controlers/userControlers.ts";
 import jwt from "jsonwebtoken"
 import isActive from "../middleware/isActive.ts";
-import mongoose from "mongoose";
-import bcrypt from "bcrypt"
-import Chat from "../model/chat.ts";
-import Message from "../model/messages.ts";
 
 const router = express.Router();
 
@@ -147,7 +143,7 @@ router.get('/reset-password/:token', (req: Request, res: Response) => {
 });
 
 // POST route too
-router.post('/reset-password/:token', postResetPassword);
+router.post('/reset-password/:token', passwordRules, postResetPassword);
 
 router.get('/message/:id', getMessage)
 router.route('/login').get(getLogin).post(postLogin);

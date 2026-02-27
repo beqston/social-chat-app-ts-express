@@ -662,6 +662,14 @@ export const postResetPassword = async (req: Request, res: Response) => {
   const { password } = req.body;
 
   try {
+    // check if is valid password
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({
+        message: errors.array()[0].msg 
+      });
+    }
+    // create hash token for reser password
     const hashedToken = crypto
       .createHash('sha256')
       .update(token)
@@ -670,27 +678,26 @@ export const postResetPassword = async (req: Request, res: Response) => {
     const user = await User.findOne({
       resetPasswordToken: hashedToken,
       resetPasswordExpire: { $gt: Date.now() }
-    }).select('+password'); // ✅ need to select password since select:false
+    }).select('+password'); 
 
     if (!user) {
-      return res.status(400).json({ msg: 'Invalid or expired token' });
+      return res.status(400).json({ message: 'Invalid or expired token' });
     }
 
     if (password.length < 8) {
-      return res.status(400).json({ msg: 'Password must be at least 8 characters' });
+      return res.status(400).json({ message: 'Password must be at least 8 characters' });
     }
 
-    user.password = password;                    // ✅ raw password, pre save will hash
-    (user as any)._isPasswordReset = true;       // ✅ bypass confirmPassword check
+    user.password = password;                    
+    (user as any)._isPasswordReset = true;       
     user.resetPasswordToken = undefined;
     user.resetPasswordExpire = undefined;
 
     await user.save();
 
-    res.status(200).json({ msg: 'Password reset successful' });
+    res.status(200).json({ message: 'Password reset successful' });
 
   } catch (error) {
-    console.log("❌ Error:", error);
-    res.status(500).json({ msg: 'Server error' });
+    res.status(500).json({ message: 'Server error' });
   }
 };

@@ -80,17 +80,31 @@ userSchema.virtual('confirmPassword')
 userSchema.pre("save", async function (next) {
   const user = this as HydratedDocument<IUser>;
 
+  // Skip if password not modified
   if (!user.isModified("password")) return next();
 
-  // ✅ Skip confirmPassword check on password reset
-  if(!(user as any)._isPasswordReset){
-    if (user._confirmPassword && user.password !== user._confirmPassword) {
-      return next(new Error("Passwords do not match"));
-    }
-  }
+  try {
+    // Normal registration → validate confirmPassword
+    if (!(user as any)._isPasswordReset) {
 
-  user.password = await bcrypt.hash(user.password, 12);
-  next();
+      // ✅ Check confirmPassword exists
+      if (!user._confirmPassword) {
+        return next(new Error("Confirm password is required"));
+      }
+
+      // ✅ Check passwords match
+      if (user.password !== user._confirmPassword) {
+        return next(new Error("Passwords do not match"));
+      }
+    }
+
+    // Hash password
+    user.password = await bcrypt.hash(user.password, 12);
+    next();
+
+  } catch (error) {
+    next(error as Error); // ✅ handle bcrypt errors
+  }
 });
 
 //check validate virtual confirmPassword field
