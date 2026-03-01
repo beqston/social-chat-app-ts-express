@@ -6,6 +6,7 @@ export interface IUser extends Document {
   username: string;
   email: string;
   password: string;
+  image?: string;
   _confirmPassword?: string;
   _isPasswordReset?: boolean; 
   active: boolean;
@@ -49,6 +50,7 @@ const userSchema = new Schema<IUser>({
             }
         }
     },
+    image:String,
     active:{
         type:Boolean,
         default:true

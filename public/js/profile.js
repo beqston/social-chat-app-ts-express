@@ -4,41 +4,46 @@ const deleteModal = document.getElementById("delete-modal");
 const closeModal = document.getElementById("close-modal");
 const deleteProfile = document.getElementById("delete-profile");
 
-function callToastModal(message){
-    toastModal.style.display="block";
-    toastModal.textContent=message;
+function callToastModal(message, isError = false) {
+    toastModal.style.display = "block";
+    toastModal.textContent = message;
+    toastModal.style.backgroundColor = isError ? "#ff4d4d" : "#4CAF50";
 
-    setTimeout(()=>{
-        toastModal.style.display="none";
+    setTimeout(() => {
+        toastModal.style.display = "none";
     }, 3000);
 }
 
-
 async function getProfile() {
-    try{
-        profileCNT.innerHTML = "";
-        const resMe = await fetch("/api/v1/me");
+    try {
+        profileCNT.innerHTML = "<p>Loading profile...</p>";
+        
+        // Fetch current user ID and user data
+        const [resMe, resUsers] = await Promise.all([
+            fetch("/api/v1/me"),
+            fetch("/api/v1/users")
+        ]);
 
-        if(!resMe.ok){
-            return alert("User Not Fount");
-        }
+        if (!resMe.ok || !resUsers.ok) throw new Error("Could not fetch user data");
 
         const userId = await resMe.json();
-        const resUsers = await fetch("/api/v1/users");
-
-        if(!resUsers.ok){
-            return alert("User Not Found!")
-        }
-
         const users = await resUsers.json();
-        const user = users.data.find((user)=> user._id == userId);
+        const user = users.data.find((u) => u._id == userId);
 
-        // profile details main container
-        profileCNT.innerHTML= `
+        if (!user) return alert("User Not Found");
+
+        // Profile UI with Image Upload hidden input
+        profileCNT.innerHTML = `
             <div id="profile-details-cnt">
-
                 <div class="username-email">
-                    <div class="profile-img">${user.username[0].toUpperCase()}</div>
+                    <div class="profile-img-container" style="position: relative; cursor: pointer;">
+                        ${user.image 
+                            ? `<img src="${user.image}" id="avatar-preview" class="profile-img">` 
+                            : `<div class="profile-img">${user.username[0].toUpperCase()}</div>`
+                        }
+                        <div class="edit-overlay" style="color:white;">Change Photo</div>
+                        <input type="file" id="imageInput" accept="image/*" style="display:none">
+                    </div>
                     <div>
                         <h2>${user.username}</h2>
                         <h2>${user.email}</h2>
@@ -46,82 +51,110 @@ async function getProfile() {
                 </div>
             
                 <form id="passwordForm">
-                    <input type="password" name="password" id="password" placeholder="Password">
-                    <input type="password" name="confirmPassword" id="confirmPassword" placeholder="Confirm Password">
+                    <input type="password" id="password" placeholder="New Password" required>
+                    <input type="password" id="confirmPassword" placeholder="Confirm Password" required>
                     <div><button type="submit">Update Password</button></div>
                 </form>
-                <button id="delete-btn">Delete Profile</button>
+
+                <button id="delete-btn" class="danger-btn">Delete Profile</button>
             </div>
+        `;
 
-        `
-        // update password logic
-        const passwordForm = document.getElementById("passwordForm");
-        passwordForm.addEventListener("submit", async (e) => {
-            e.preventDefault();
-            
-            const passwordInput = document.getElementById("password");
-            const confirmPasswordInput = document.getElementById("confirmPassword");
-            
-            const password = passwordInput.value;
-            const confirmPassword = confirmPasswordInput.value;
+        setupUploadLogic();
+        setupPasswordLogic(user._id);
+        setupDeleteLogic(user._id);
 
-            try {
-                const res = await fetch(`/user/update-password/${user._id}`, {
-                method: "PATCH",
-                headers: {
-                    "Content-Type": "application/json",
-                },
-                credentials:"include",
-                body: JSON.stringify({ password, confirmPassword })
-                });
-
-                if (!res.ok) {
-                const error = await res.json().catch(() => ({}));
-                throw new Error(error.message || "Error updating password");
-                };
-
-                
-                passwordInput.value = "";
-                confirmPasswordInput.value = "";
-                callToastModal("Password updated successfully!");
-
-            } catch (error) {
-                callToastModal(error.message)
-                toastModal.style.color="red";
-            }
-        });
-
-        // delete profile logic
-        const deleteButton = document.getElementById("delete-btn");
-        // show delete modal
-        deleteButton.onclick=()=>{
-            deleteModal.style.display="grid"
-        };
-        // close delete modal
-        closeModal.onclick = ()=>{
-            deleteModal.style.display="none"
-        };
-
-        deleteProfile.addEventListener("click", async()=>{
-            try {
-            const resDeleteUser = await fetch(`/user/delete-profile/${user._id}`, {method:"DELETE"});
-            if(!resDeleteUser.ok){
-                const error = resDeleteUser.json().catch(()=>({}));
-                throw new Error (error || "You have error, not deleted user!!")
-            }
-
-            callToastModal("User Deleded successfully!!");
-            setTimeout(()=>{
-                window.location.href="/login";
-            }, 3000);
-
-            } catch (err) {
-                callToastModal(err.message)
-            }
-        })
-    }catch(err){
-        console.log(err)
+    } catch (err) {
+        console.error(err);
+        profileCNT.innerHTML = "<p>Error loading profile.</p>";
     }
 }
 
-getProfile()
+// --- LOGIC FUNCTIONS ---
+
+function setupUploadLogic() {
+    const imgContainer = document.querySelector(".profile-img-container");
+    const imageInput = document.getElementById("imageInput");
+
+    // Click on avatar to trigger file input
+    imgContainer.onclick = () => imageInput.click();
+
+    imageInput.onchange = async () => {
+        const file = imageInput.files[0];
+        if (!file) return;
+
+        // 1. Show immediate local preview
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            const preview = document.getElementById("avatar-preview");
+            if (preview.tagName === "IMG") {
+                preview.src = e.target.result;
+            } else {
+                preview.outerHTML = `<img src="${e.target.result}" id="avatar-preview" class="profile-img">`;
+            }
+        };
+        reader.readAsDataURL(file);
+
+        // 2. Upload to Server
+        const formData = new FormData();
+        formData.append("image", file); // Must match upload.single('image') in backend
+
+        try {
+            const res = await fetch("/upload/profile-image", {
+                method: "POST",
+                body: formData // Note: No 'Content-Type' header needed, browser sets it for FormData
+            });
+
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.message || "Upload failed");
+
+            callToastModal("Profile picture updated!");
+        } catch (err) {
+            callToastModal(err.message, true);
+        }
+    };
+}
+
+function setupPasswordLogic(userId) {
+    const passwordForm = document.getElementById("passwordForm");
+    passwordForm.addEventListener("submit", async (e) => {
+        e.preventDefault();
+        const password = document.getElementById("password").value;
+        const confirmPassword = document.getElementById("confirmPassword").value;
+
+        try {
+            const res = await fetch(`/user/update-password/${userId}`, {
+                method: "PATCH",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ password, confirmPassword })
+            });
+
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.message || "Update failed");
+
+            passwordForm.reset();
+            callToastModal("Password updated successfully!");
+        } catch (err) {
+            callToastModal(err.message, true);
+        }
+    });
+}
+
+function setupDeleteLogic(userId) {
+    document.getElementById("delete-btn").onclick = () => deleteModal.style.display = "grid";
+    closeModal.onclick = () => deleteModal.style.display = "none";
+
+    deleteProfile.onclick = async () => {
+        try {
+            const res = await fetch(`/user/delete-profile/${userId}`, { method: "DELETE" });
+            if (!res.ok) throw new Error("Failed to delete profile");
+
+            callToastModal("Profile deleted. Redirecting...");
+            setTimeout(() => window.location.href = "/login", 2000);
+        } catch (err) {
+            callToastModal(err.message, true);
+        }
+    };
+}
+
+getProfile();

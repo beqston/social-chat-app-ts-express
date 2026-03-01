@@ -3,9 +3,10 @@ import path from "path";
 import User from "../model/user.ts";
 import isAuthUser, { tokenExpires } from "../middleware/auth.ts";
 import userValidation, { passwordRules } from "../utils/userValidation.ts";
-import { getChats, getLogin, getMe, getMessage, getUsers, logout, postMessage, postLogin, postUser, createChat, getAllPMMessage, getMessagesCount, deleteMessage, updateMessage, deleteChat, markAsSeen, updateUserPassword, deleteUserProfile, postForgotPassword, postResetPassword } from "../controlers/userControlers.ts";
+import { getChats, getLogin, getMe, getMessage, getUsers, logout, postMessage, postLogin, postUser, createChat, getAllPMMessage, getMessagesCount, deleteMessage, updateMessage, deleteChat, markAsSeen, updateUserPassword, deleteUserProfile, postForgotPassword, postResetPassword, postProfileImage } from "../controlers/userControlers.ts";
 import jwt from "jsonwebtoken"
 import isActive from "../middleware/isActive.ts";
+import uploadImage from "../utils/multer.ts";
 
 const router = express.Router();
 
@@ -150,6 +151,11 @@ router.route('/login').get(getLogin).post(postLogin);
 router.post('/login-out', logout);
 // create new user
 router.post("/add-user", userValidation, postUser);
+
+// upload profile image
+const upload = uploadImage(path.join(__dirname, '../uploads/profile'));
+
+router.post('/upload/profile-image', upload.single('image'), postProfileImage);
 
 // user api
 router.get('/api/v1/users', getUsers);

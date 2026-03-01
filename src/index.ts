@@ -34,6 +34,10 @@ app.set("io", io);
 // ✅ Serve static files from root-level /public
 app.use(express.static(path.join(__dirname, '../public')));
 
+// upload middleware
+app.use('/uploads', express.static(path.join(__dirname, '/uploads')));
+
+
 app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));

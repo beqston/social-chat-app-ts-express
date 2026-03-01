@@ -10,6 +10,8 @@ import mongoose from "mongoose";
 import isAuthUser from "../middleware/auth.ts";
 import crypto from "crypto";
 import SendEmail from "../utils/nodemailer.ts";
+import fs from 'fs';
+
 
 export const postUser = async (req: Request, res: Response) => {
   
@@ -699,5 +701,58 @@ export const postResetPassword = async (req: Request, res: Response) => {
 
   } catch (error) {
     res.status(500).json({ message: 'Server error' });
+  }
+};
+
+
+export const postProfileImage = async (req: Request, res: Response) => {
+  try {
+    // 1. Initial Validation
+    const token = req.cookies.token;
+    if (!token || !req.file) {
+      if (req.file) fs.unlinkSync(req.file.path); // Cleanup if no token
+      return res.status(401).json({ message: "Unauthorized or no file!" });
+    }
+
+    const decoded = jwt.verify(token, process.env.JWT_SECRET!) as { id: string };
+    const user = await User.findById(decoded.id);
+
+    if (!user) {
+      fs.unlinkSync(req.file.path);
+      return res.status(404).json({ message: "User not found!" });
+    }
+
+    // --- STEP 2: DELETE OLD IMAGE FROM SERVER ---
+    if (user.image) {
+      // Reconstruct the full path to the old file
+      // process.cwd() is the root folder. We look into /src/ + the path in DB
+      const oldImagePath = path.join(process.cwd(), 'src', user.image);
+
+      if (fs.existsSync(oldImagePath)) {
+        try {
+          fs.unlinkSync(oldImagePath);
+          console.log("Old image deleted successfully");
+        } catch (err) {
+          console.error("Failed to delete old image:", err);
+        }
+      }
+    }
+
+    // --- STEP 3: PREPARE NEW PATH FOR DATABASE ---
+    const rawPath = req.file.path.replace(/\\/g, '/'); 
+    const relativeWebPath = rawPath.substring(rawPath.indexOf('uploads/'));
+
+    // Update and Save
+    user.image = relativeWebPath;
+    await user.save();
+
+    return res.status(200).json({
+      message: "Profile image updated!",
+      imageUrl: `/${relativeWebPath}`
+    });
+
+  } catch (error) {
+    if (req.file) fs.unlinkSync(req.file.path);
+    return res.status(500).json({ message: "Server error" });
   }
 };
