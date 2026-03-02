@@ -18,7 +18,6 @@ async function getProfile() {
     try {
         profileCNT.innerHTML = "<p>Loading profile...</p>";
         
-        // Fetch current user ID and user data
         const [resMe, resUsers] = await Promise.all([
             fetch("/api/v1/me"),
             fetch("/api/v1/users")
@@ -32,22 +31,23 @@ async function getProfile() {
 
         if (!user) return alert("User Not Found");
 
-        // Profile UI with Image Upload hidden input
         profileCNT.innerHTML = `
             <div id="profile-details-cnt">
                 <div class="username-email">
                     <div class="profile-img-container" style="position: relative; cursor: pointer;">
                         ${user.image 
                             ? `<img src="${user.image}" id="avatar-preview" class="profile-img">` 
-                            : `<div class="profile-img">${user.username[0].toUpperCase()}</div>`
+                            : `<div class="profile-img" id="avatar-preview">${user.username[0].toUpperCase()}</div>`
                         }
                         <div class="edit-overlay" style="color:white;">Change Photo</div>
                         <input type="file" id="imageInput" accept="image/*" style="display:none">
                     </div>
-                    <div>
+                    <div class="user-details-cnt">
                         <h2>${user.username}</h2>
                         <h2>${user.email}</h2>
                     </div>
+                    
+                    ${user.image ? `<div id="remove-image-cnt"><button id="remove-image">Remove Photo</button></div>` : ``}
                 </div>
             
                 <form id="passwordForm">
@@ -60,34 +60,32 @@ async function getProfile() {
             </div>
         `;
 
-        setupUploadLogic();
-        setupPasswordLogic(user._id);
-        setupDeleteLogic(user._id);
-
+        handleUploadImage();
+        handleChangePassword(user._id);
+        handleDeleteUser(user._id);
+        if (user.image) {
+            handleDeleteProfileImage();
+        }
     } catch (err) {
         console.error(err);
         profileCNT.innerHTML = "<p>Error loading profile.</p>";
     }
 }
 
-// --- LOGIC FUNCTIONS ---
-
-function setupUploadLogic() {
+function handleUploadImage() {
     const imgContainer = document.querySelector(".profile-img-container");
     const imageInput = document.getElementById("imageInput");
 
-    // Click on avatar to trigger file input
     imgContainer.onclick = () => imageInput.click();
 
     imageInput.onchange = async () => {
         const file = imageInput.files[0];
         if (!file) return;
 
-        // 1. Show immediate local preview
         const reader = new FileReader();
         reader.onload = (e) => {
             const preview = document.getElementById("avatar-preview");
-            if (preview.tagName === "IMG") {
+            if (preview && preview.tagName === "IMG") {
                 preview.src = e.target.result;
             } else {
                 preview.outerHTML = `<img src="${e.target.result}" id="avatar-preview" class="profile-img">`;
@@ -95,18 +93,27 @@ function setupUploadLogic() {
         };
         reader.readAsDataURL(file);
 
-        // 2. Upload to Server
         const formData = new FormData();
-        formData.append("image", file); // Must match upload.single('image') in backend
+        formData.append("image", file);
 
         try {
             const res = await fetch("/upload/profile-image", {
                 method: "POST",
-                body: formData // Note: No 'Content-Type' header needed, browser sets it for FormData
+                body: formData
             });
 
             const data = await res.json();
             if (!res.ok) throw new Error(data.message || "Upload failed");
+
+            // Add "Remove Photo" button if it doesn't exist yet
+            if (!document.getElementById("remove-image")) {
+                const usernameEmail = document.querySelector(".username-email");
+                const div = document.createElement("div");
+                div.id = "remove-image-cnt";
+                div.innerHTML = `<button id="remove-image">Remove Photo</button>`;
+                usernameEmail.appendChild(div);
+                handleDeleteProfileImage();
+            }
 
             callToastModal("Profile picture updated!");
         } catch (err) {
@@ -115,7 +122,7 @@ function setupUploadLogic() {
     };
 }
 
-function setupPasswordLogic(userId) {
+function handleChangePassword(userId) {
     const passwordForm = document.getElementById("passwordForm");
     passwordForm.addEventListener("submit", async (e) => {
         e.preventDefault();
@@ -140,7 +147,7 @@ function setupPasswordLogic(userId) {
     });
 }
 
-function setupDeleteLogic(userId) {
+function handleDeleteUser(userId) {
     document.getElementById("delete-btn").onclick = () => deleteModal.style.display = "grid";
     closeModal.onclick = () => deleteModal.style.display = "none";
 
@@ -151,6 +158,30 @@ function setupDeleteLogic(userId) {
 
             callToastModal("Profile deleted. Redirecting...");
             setTimeout(() => window.location.href = "/login", 2000);
+        } catch (err) {
+            callToastModal(err.message, true);
+        }
+    };
+}
+
+function handleDeleteProfileImage() {
+    const removeImage = document.getElementById("remove-image");
+
+    removeImage.onclick = async () => {
+        try {
+            const res = await fetch(`/delete/profile-image`, { method: "DELETE", credentials: "include" });
+            if (!res.ok) throw new Error("Failed to delete image");
+
+            // Replace <img> with letter avatar
+            const preview = document.getElementById("avatar-preview");
+            const username = document.querySelector(".user-details-cnt h2").textContent;
+            preview.outerHTML = `<div class="profile-img" id="avatar-preview">${username[0].toUpperCase()}</div>`;
+
+            // Remove the "Remove Photo" button
+            const removeImageCnt = document.getElementById("remove-image-cnt");
+            if (removeImageCnt) removeImageCnt.remove();
+
+            callToastModal("Profile photo deleted successfully");
         } catch (err) {
             callToastModal(err.message, true);
         }

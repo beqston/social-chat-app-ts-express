@@ -756,3 +756,48 @@ export const postProfileImage = async (req: Request, res: Response) => {
     return res.status(500).json({ message: "Server error" });
   }
 };
+
+export const deleteProfileImage = async (req: Request, res: Response)=>{
+
+  try {
+    // 1. Initial Validation
+    const token = req.cookies.token;
+    if (!token) {
+      return res.status(401).json({ message: "Unauthorized or no file!" });
+    }
+
+    const decoded = jwt.verify(token, process.env.JWT_SECRET!) as { id: string };
+    const user = await User.findById(decoded.id);
+
+    if (!user) {
+      return res.status(404).json({ message: "User not found!" });
+    }
+
+    // delete image 
+    if (user.image) {
+      // Reconstruct the full path to the old file
+      // process.cwd() is the root folder. We look into /src/ + the path in DB
+      const oldImagePath = path.join(process.cwd(), 'src', user.image);
+
+      if (fs.existsSync(oldImagePath)) {
+        try {
+          fs.unlinkSync(oldImagePath);
+            user.image = undefined;
+             await user.save()
+        } catch (err) {
+          console.error("Failed to delete old image:", err);
+        }
+      }
+    }
+
+    return res.status(200).json({
+      message:"Profile Image Deleted!!"
+    })
+
+
+  } catch (error) {
+    return res.status(500).json({
+      message:"Interval server error!!"
+    })
+  }
+}

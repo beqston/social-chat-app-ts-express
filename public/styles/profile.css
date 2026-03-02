@@ -96,6 +96,15 @@ main{
     cursor: pointer;
 }
 
+#remove-image{
+    color: rgb(243, 102, 0);
+    position: relative;
+    z-index: 20;
+    padding: 8px;
+    border-radius: 12px;
+    cursor: pointer;
+}
+
 @media screen and (max-width: 930px) {
     #profile-details-cnt{
         width: 90%;
@@ -106,4 +115,23 @@ main{
         left: 10%;
         font-size: 22px;
     }
+ }
+
+ @media screen and (max-width: 580px) {
+  #profile-details-cnt .username-email{
+   grid-template-columns: 1fr;
+  }
+  #profile-details-cnt .username-email .profile-img-container{
+    grid-row: 1/ 2;
+  }
+
+  #profile-details-cnt .username-email #remove-image{
+    grid-row: 2/ 3;
+  }
+
+  #profile-details-cnt .username-email .user-details-cnt{
+    grid-row: 3/ 3;
+  }
+
+
  }
