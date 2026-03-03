@@ -83,5 +83,90 @@ document.addEventListener('DOMContentLoaded', () => {
                     window.location.href = "/login";
                 };
             }
+
+            // ---search logic----
+            const searchForm = document.getElementById("search-form");
+            searchForm.addEventListener("submit", (e) => {
+                e.preventDefault();
+                const searchValue = document.getElementById("search-value");
+                window.location.href = `/search?all-users=${encodeURIComponent(searchValue.value)}`;
+            });
+
+            async function fetchUsers(query) {
+                const searchContainer = document.getElementById("search-cnt");
+
+                const resSearch = await fetch("/search", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ search: query })
+                });
+
+                if (resSearch.status === 404) {
+                    searchContainer.innerHTML = `
+                        <div class="error-block">
+                            <p>No users found for "<strong>${query}</strong>"</p>
+                        </div>
+                    `;
+                    return;
+                }
+
+                if (!resSearch.ok) {
+                    searchContainer.innerHTML = `
+                        <div class="error-block">
+                            <p>Something went wrong. Please try again.</p>
+                        </div>
+                    `;
+                    return;
+                }
+
+                const { users } = await resSearch.json();
+
+                searchContainer.innerHTML = users.map(user => `
+                    <div id="user-cnt">
+                        ${user.image 
+                            ? `<img src="${user.image}" id="avatar-preview" class="profile-img">` 
+                            : `<div class="profile-img" id="avatar-preview">${user.username[0].toUpperCase()}</div>`
+                        }
+                        <h2>${user.username}</h2>
+                        <div class="active-cnt">
+                            ${user.active?"<div class='onsite'></div>":"<div class='ofline'></div>"}
+                            <p>${user.lastActiveAgo}</p>
+                            <a href="/chat/${user._id}">Send Message</a>
+                        </div>
+                    </div>
+                `).join("");
+            }
+
+            // call it
+            const params = new URLSearchParams(window.location.search);
+            const query = params.get("all-users");
+
+            if (query) {
+                fetchUsers(query);
+            }
+
+            //     try {
+            //         const resSearch = await fetch("/search", {
+            //             method: "POST",
+            //             headers: { "Content-Type": "application/json" },
+            //             body: JSON.stringify({ search: searchValue.value })
+            //         });
+            //         if (!resSearch.ok) {
+            //             const error = await resSearch.json().catch(() => ({}));
+            //             throw new Error(error.message || "Something wrong!!");
+            //         }
+            //         const { users } = await resSearch.json();
+
+            //         // Remove the redirect, and map over the array
+            //         searchContainer.innerHTML = users.map(user => `
+            //             <div>
+            //                 <h2>${user.username}</h2>
+            //             </div>
+            //         `).join("");
+
+            //     } catch (error) {
+            //         alert("Search error: " + error.message);
+            //     }
+            // });
         });
 });

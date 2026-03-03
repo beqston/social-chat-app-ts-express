@@ -1,0 +1,31 @@
+#search-cnt{
+    width: 100%;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 20px;
+    padding: 18px;
+}
+#user-cnt{
+    border: 1px solid green; 
+    padding: 12px;  
+    place-items: center; 
+}
+.profile-img{
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    background-color: green;
+    color: white;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 3rem;
+}
+#user-cnt a{
+    color: blue;
+}
+.error-block{
+    color: red;
+    font-size: 22px;
+    margin: 20px;
+}

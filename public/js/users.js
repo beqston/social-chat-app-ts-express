@@ -71,7 +71,7 @@ async function getUsers() {
                 </div>
 
                 <button>Send Message</button>
-                <a href="/chat/${user._id}">link</a>
+                <a href="/chat/${user._id}">Send Message</a>
             `;
 
             // Attach click listener to this button

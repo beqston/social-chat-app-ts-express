@@ -801,3 +801,28 @@ export const deleteProfileImage = async (req: Request, res: Response)=>{
     })
   }
 }
+
+
+
+export const postSearchUser = async (req: Request, res: Response) => {
+  const { search } = req.body;
+
+  if (!search || search.trim() === "") {
+    return res.status(400).json({ message: "Search query is required!" });
+  }
+
+  try {
+    const users = await User.find({
+      username: { $regex: search, $options: "i" }  
+    }).select("-password");  
+
+    if (users.length === 0) {
+      return res.status(404).json({ message: "No users found!" });
+    }
+
+    res.status(200).json({ users });
+
+  } catch (error) {
+    return res.status(500).json({ message: "Internal server error!" });
+  }
+};

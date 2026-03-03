@@ -3,7 +3,7 @@ import path from "path";
 import User from "../model/user.ts";
 import isAuthUser, { tokenExpires } from "../middleware/auth.ts";
 import userValidation, { passwordRules } from "../utils/userValidation.ts";
-import { getChats, getLogin, getMe, getMessage, getUsers, logout, postMessage, postLogin, postUser, createChat, getAllPMMessage, getMessagesCount, deleteMessage, updateMessage, deleteChat, markAsSeen, updateUserPassword, deleteUserProfile, postForgotPassword, postResetPassword, postProfileImage, deleteProfileImage } from "../controlers/userControlers.ts";
+import { getChats, getLogin, getMe, getMessage, getUsers, logout, postMessage, postLogin, postUser, createChat, getAllPMMessage, getMessagesCount, deleteMessage, updateMessage, deleteChat, markAsSeen, updateUserPassword, deleteUserProfile, postForgotPassword, postResetPassword, postProfileImage, deleteProfileImage, postSearchUser } from "../controlers/userControlers.ts";
 import jwt from "jsonwebtoken"
 import isActive from "../middleware/isActive.ts";
 import uploadImage from "../utils/multer.ts";
@@ -168,10 +168,12 @@ router.get('/api/v1/chats', getChats);
 router.get('/api/v1/me', getMe);
 // message crud operations
 router.route('/message/:id').post(postMessage).patch(updateMessage).delete(deleteMessage);
-
 // chat crud operations
 router.route('/chat/:id').get(createChat).post(createChat).delete(deleteChat);
-
+// search route, get and post request
+router.route("/search").get((req: Request, res: Response)=>{
+  res.sendFile(path.join(__dirname, '../pages/search.html'));
+}).post(postSearchUser);
 
 // user update user password
 router.patch("/user/update-password/:id", updateUserPassword);
