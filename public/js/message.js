@@ -203,7 +203,7 @@ async function getPMMessages() {
             }
 
             const userDiv = document.createElement('div');
-            userDiv.className = `see-message-cnt ${isActive ? "active" : ""}`;
+            userDiv.className = `see-message-cnt ${isActive ? "active-chat" : ""}`;
             activeTime.textContent=findUser.lastActiveAgo;
             userDiv.innerHTML = `
                 <a href="${chatUrl}">
