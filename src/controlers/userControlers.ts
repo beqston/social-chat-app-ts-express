@@ -380,23 +380,31 @@ export const deleteMessage = async (req: Request, res: Response) => {
   }
 
   try {
-    // findByIdAndDelete so we get the document back
     const deletedMessage = await Message.findByIdAndDelete(id);
 
     if (!deletedMessage) {
       return res.status(404).json({ message: "Message not found" });
     }
-    
-    // Get the IO instance
+
+    // Find the new last message in this chat (after deletion)
+    const newLastMessage = await Message.findOne({ chat: deletedMessage.chat })
+      .sort({ createdAt: -1 })
+      .select("_id");
+
+    // Update the chat's lastMessage field
+    await Chat.findByIdAndUpdate(deletedMessage.chat, 
+      newLastMessage 
+        ? { lastMessage: newLastMessage._id }
+        : { $unset: { lastMessage: "" } }
+    );
+
     const io = req.app.get("io");
 
-    //  Emit event to the specific Chat Room
-    // We send the ID of the deleted message so the frontend knows what to remove
     if (io) {
-        io.to(deletedMessage.chat.toString()).emit("message_deleted", {
-            messageId: deletedMessage._id,
-            chatId: deletedMessage.chat
-        });
+      io.to(deletedMessage.chat.toString()).emit("message_deleted", {
+        messageId: deletedMessage._id,
+        chatId: deletedMessage.chat
+      });
     }
 
     return res.status(200).json({
@@ -538,7 +546,6 @@ export const markAsSeen = async (req: Request, res: Response) => {
         res.status(500).json({ message: "Error marking messages as seen" });
     }
 };
-
 
 export const updateUserPassword = async (req: Request, res: Response) => {
   const { id } = req.params;
@@ -740,7 +747,7 @@ export const postProfileImage = async (req: Request, res: Response) => {
 
     // --- STEP 3: PREPARE NEW PATH FOR DATABASE ---
     const rawPath = req.file.path.replace(/\\/g, '/'); 
-    const relativeWebPath = rawPath.substring(rawPath.indexOf('uploads/'));
+    const relativeWebPath = rawPath.substring(rawPath.indexOf('/uploads/'));
 
     // Update and Save
     user.image = relativeWebPath;
@@ -801,8 +808,6 @@ export const deleteProfileImage = async (req: Request, res: Response)=>{
     })
   }
 }
-
-
 
 export const postSearchUser = async (req: Request, res: Response) => {
   const { search } = req.body;

@@ -43,7 +43,11 @@ async function getMessages() {
             userDiv.className = 'see-message-cnt';
             userDiv.innerHTML = `
                 <a href="/message/${chat._id}">
-                    <div class="profile-image">${username[0].toUpperCase()}</div>
+                    ${findUser.image 
+                        ? `<img class="profile-image" src="${findUser.image}" id="avatar-preview" class="profile-img">` 
+                        : `<div class="profile-image">${username[0].toUpperCase()}</div>`
+                    }
+                    
                     <div>
                         <div class="username-cnt">
                             <h2>${username}</h2>

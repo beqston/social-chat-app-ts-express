@@ -207,7 +207,10 @@ async function getPMMessages() {
             activeTime.textContent=findUser.lastActiveAgo;
             userDiv.innerHTML = `
                 <a href="${chatUrl}">
-                    <div class="profile-image">${username[0].toUpperCase()}</div>
+                    ${findUser.image 
+                        ? `<img class="profile-image" src="${findUser.image}" id="avatar-preview" class="profile-img">` 
+                        : `<div class="profile-image">${username[0].toUpperCase()}</div>`
+                    }
                     <div>
                         <h2>${username}</h2>
                         ${lastMessageSender ? `
