@@ -57,52 +57,73 @@ router.use((req: Request, res: Response, next: NextFunction) => {
       }).catch(err => console.error("Update active status failed", err));
     }
   } catch (err) {
-    console.log(err)
+    console.error(err)
   }
   next();
 });
 
-
 // update token
-router.use(async(req:Request,res:Response,next:NextFunction)=>{
-
+router.use(async (req: Request, res: Response, next: NextFunction) => {
   const token = req.cookies?.token;
-  // if no token at all, skip
   if (!token) return next();
 
-  // chek if is auth user
-  const isAuth = isAuthUser(req);
-  if (!isAuth) return next();
+  try {
+    let userID: string;
+
     try {
-    const decoded = jwt.verify(req.cookies.token, process.env.JWT_SECRET!) as { id: string };
-    const userID = decoded.id;
-    const UPDATE_TOKEN = 2*60*60*1000; 
-    const now = Date.now();
+      // Try to verify normally
+      const decoded = jwt.verify(token, process.env.JWT_SECRET!) as { id: string; iat: number };
+      userID = decoded.id;
 
-    const user = await User.findById(userID);
-    // check if user exist
-    if (!user) return next();
-    // convert date to milisecond
-    const lastUpdateMs = user.updatedAt ? new Date(user.updatedAt).getTime() : 0;
+      const UPDATE_TOKEN = 2 * 60 * 60; // 2 hours in SECONDS (iat is in seconds)
+      const now = Math.floor(Date.now() / 1000);
 
-    if((now - lastUpdateMs) > UPDATE_TOKEN){
-      const secret = process.env.JWT_SECRET || "secretToken"
-      const  newToken = jwt.sign({id:userID}, secret, {expiresIn:"1d"})
-      res.cookie("token", newToken, {
-          httpOnly: true,       // prevents JS from reading it
-          secure: process.env.NODE_ENV === "production", // HTTPS only in prod
-          sameSite: "lax",      // CSRF protection
-          maxAge: 24 * 60 * 60 * 1000, // 1 day
-        });
+      // Only refresh if token is older than 2 hours
+      if ((now - decoded.iat) < UPDATE_TOKEN) {
+        return next(); // Token is still fresh, no need to refresh
+      }
 
-      if (req.session) {
-        req.session.userID = userID;
+    } catch (err) {
+      if (err instanceof jwt.TokenExpiredError) {
+        // Token expired — decode without verifying to get the user ID
+        const decoded = jwt.decode(token) as { id: string } | null;
+        if (!decoded?.id) {
+          res.clearCookie("token");
+          return next();
+        }
+        userID = decoded.id;
+      } else {
+        // Invalid token (tampered, wrong secret, etc.)
+        res.clearCookie("token");
+        return next();
       }
     }
 
+    const user = await User.findById(userID);
+    if (!user) {
+      res.clearCookie("token");
+      return next();
+    }
+
+    // Issue new token
+    const secret = process.env.JWT_SECRET!;
+    const newToken = jwt.sign({ id: userID }, secret, { expiresIn: "1d" });
+
+    res.cookie("token", newToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
+      maxAge: 24 * 60 * 60 * 1000, // 1 day
+    });
+
+    if (req.session) {
+      req.session.userID = userID;
+    }
+
   } catch (err) {
-    res.clearCookie("token");
+    console.error("Token refresh error:", err);
   }
+
   next();
 });
 

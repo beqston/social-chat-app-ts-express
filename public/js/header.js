@@ -129,8 +129,10 @@ document.addEventListener('DOMContentLoaded', () => {
                         }
                         <h2>${user.username}</h2>
                         <div class="active-cnt">
-                            ${user.active?"<div class='onsite'></div>":"<div class='ofline'></div>"}
-                            <p>${user.lastActiveAgo}</p>
+                            <div class="active-wrapper">
+                                ${user.active?"<div class='onsite'></div>":"<div class='ofline'></div>"}
+                                <p>${user.lastActiveAgo}</p>
+                            </div>
                             <a href="/chat/${user._id}">Send Message</a>
                         </div>
                     </div>
@@ -144,29 +146,5 @@ document.addEventListener('DOMContentLoaded', () => {
             if (query) {
                 fetchUsers(query);
             }
-
-            //     try {
-            //         const resSearch = await fetch("/search", {
-            //             method: "POST",
-            //             headers: { "Content-Type": "application/json" },
-            //             body: JSON.stringify({ search: searchValue.value })
-            //         });
-            //         if (!resSearch.ok) {
-            //             const error = await resSearch.json().catch(() => ({}));
-            //             throw new Error(error.message || "Something wrong!!");
-            //         }
-            //         const { users } = await resSearch.json();
-
-            //         // Remove the redirect, and map over the array
-            //         searchContainer.innerHTML = users.map(user => `
-            //             <div>
-            //                 <h2>${user.username}</h2>
-            //             </div>
-            //         `).join("");
-
-            //     } catch (error) {
-            //         alert("Search error: " + error.message);
-            //     }
-            // });
         });
 });
