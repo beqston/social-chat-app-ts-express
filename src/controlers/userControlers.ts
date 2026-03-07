@@ -733,12 +733,11 @@ export const postProfileImage = async (req: Request, res: Response) => {
     if (user.image) {
       // Reconstruct the full path to the old file
       // process.cwd() is the root folder. We look into /src/ + the path in DB
-      const oldImagePath = path.join(process.cwd(), 'src', user.image);
+      const oldImagePath = path.join(__dirname, '../../', user.image);
 
       if (fs.existsSync(oldImagePath)) {
         try {
           fs.unlinkSync(oldImagePath);
-          console.log("Old image deleted successfully");
         } catch (err) {
           console.error("Failed to delete old image:", err);
         }
@@ -783,8 +782,7 @@ export const deleteProfileImage = async (req: Request, res: Response)=>{
     // delete image 
     if (user.image) {
       // Reconstruct the full path to the old file
-      // process.cwd() is the root folder. We look into /src/ + the path in DB
-      const oldImagePath = path.join(process.cwd(), 'src', user.image);
+      const oldImagePath = path.join(__dirname, '../../', user.image);
 
       if (fs.existsSync(oldImagePath)) {
         try {

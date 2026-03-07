@@ -1,7 +1,7 @@
 // models/Conversation.ts
 import mongoose, { Schema, Document } from 'mongoose';
 
-export interface IChat extends Document {
+interface IChat extends Document {
   participants: mongoose.Types.ObjectId[];
   deletedBy?:mongoose.Types.ObjectId[];
   isGroup?: boolean;                        

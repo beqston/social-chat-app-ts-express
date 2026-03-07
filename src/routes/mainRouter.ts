@@ -6,7 +6,7 @@ import userValidation, { passwordRules } from "../utils/userValidation.ts";
 import { getChats, getLogin, getMe, getMessage, getUsers, logout, postMessage, postLogin, postUser, createChat, getAllPMMessage, getMessagesCount, deleteMessage, updateMessage, deleteChat, markAsSeen, updateUserPassword, deleteUserProfile, postForgotPassword, postResetPassword, postProfileImage, deleteProfileImage, postSearchUser } from "../controlers/userControlers.ts";
 import jwt from "jsonwebtoken"
 import isActive from "../middleware/isActive.ts";
-import uploadImage from "../utils/multer.ts";
+import uploadSingleImage from "../utils/multer";
 
 const router = express.Router();
 
@@ -174,9 +174,11 @@ router.post('/login-out', logout);
 router.post("/add-user", userValidation, postUser);
 
 // upload profile image
-const upload = uploadImage(path.join(__dirname, '../uploads/profile'));
-
-router.post('/upload/profile-image', upload.single('image'), postProfileImage);
+router.post(
+    '/upload/profile-image',
+    ...uploadSingleImage(path.join(__dirname, "../../uploads/profile"), "image"),
+    postProfileImage
+);
 
 // Delete Profile Image
 router.delete('/delete/profile-image', deleteProfileImage);

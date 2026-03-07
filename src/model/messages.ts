@@ -1,13 +1,12 @@
 // models/Message.ts
 import mongoose, { Schema, Document } from 'mongoose';
 
-export interface IMessage extends Document {
+interface IMessage extends Document {
   chat: mongoose.Types.ObjectId;
   sender: mongoose.Types.ObjectId;
   text: string;
-  // Add more as needed: imageUrl, fileUrl, messageType ('text'|'image'|'file'), etc.
-  readBy: { user: mongoose.Types.ObjectId; readAt: Date }[];  // For read receipts
-  deletedFor?: mongoose.Types.ObjectId[];  // Soft delete per user
+  readBy: { user: mongoose.Types.ObjectId; readAt: Date }[];  
+  deletedFor?: mongoose.Types.ObjectId[];  
   createdAt: Date;
 }
 
