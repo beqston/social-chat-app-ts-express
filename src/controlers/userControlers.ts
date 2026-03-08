@@ -184,18 +184,20 @@ export const getChats = async(req:Request, res:Response)=>{
 }
 
 export const getUsers =  async(req:Request, res:Response)=>{
-    try {
-        const users = await User.find().sort({lastActiveAt:-1})
-        res.json({
-            data:users
-        })
-        
-    } catch (error) {
-        res.status(500).json({
-            status:'fail',
-            message:error
-        })
-    }
+  const decoded = jwt.verify(req.cookies.token, process.env.JWT_SECRET!) as { id: string };
+  const userID = new mongoose.Types.ObjectId(decoded.id)
+  try {
+      const users = await User.find({ _id: { $ne: userID } }).sort({ lastActiveAt: -1 });
+      res.json({
+          data:users
+      })
+      
+  } catch (error) {
+      res.status(500).json({
+          status:'fail',
+          message:error
+      })
+  }
 }
 
 export const getMe = (req:Request, res:Response)=>{
@@ -861,3 +863,21 @@ export const createNewPost = async (req: Request, res: Response) => {
     res.status(500).json({ message: "Internal server error while creating post." });
   }
 };
+
+export const getAllPosts = async (req: Request, res: Response) => {
+  try {
+    // find all post and sort, new post is first
+    const posts = await Post.find().sort({ createdAt: -1 });
+
+    // Check for an empty array if you want to send a specific message
+    if (posts.length === 0) {
+      return res.status(200).json({ data: [], message: "No posts yet!" });
+    }
+
+    res.status(200).json({ data: posts });
+  } catch (err) {
+    console.error("Fetch Error:", err);
+    res.status(500).json({ message: "Internal server error!!" });
+  }
+};
+

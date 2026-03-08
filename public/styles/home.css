@@ -1,15 +1,17 @@
 /* Container Layout */
 #content-area {
-    display: flex;
+    display: grid;
     justify-content: center;
+    grid-template-columns: 1fr;
     padding: 20px;
-    background-color: #f0f2f5; /* Light grey background like most feeds */
+    background-color: #f0f2f5; 
     min-height: 100vh;
 }
 
-#post-wrapper {
-    width: 100%;
-    max-width: 600px;
+#create-post-wrapper {
+    width: 50%;
+    max-width: 570px;
+    margin: 0 auto;
 }
 
 /* Post Form Card */
@@ -129,4 +131,109 @@
 
 #remove-img-btn:hover {
     background: rgba(220, 53, 69, 0.9); /* Red on hover */
+}
+
+
+/* post main container */
+#posts-container{
+    padding-top: 2rem;
+    width: 100%;
+    display: grid;
+    grid-template-columns: 1fr;
+    row-gap: 1rem;
+}
+
+
+/* post wrapper container */
+.post-wrapper{
+    margin: 0 auto;
+    width: 70%;
+    max-width: 700px;
+    border: 1px solid rgba(81, 210, 230, 0.284);
+    padding: 1rem;
+    display: grid;
+    place-items: center;
+    row-gap: 1rem;
+    border-radius: 12px;
+    position: relative;
+}
+
+/* text of post */
+.post-wrapper h3{
+    font-weight: 700;
+    font-family: Georgia, 'Times New Roman', Times, serif;
+}
+
+/* post image */
+.post-wrapper img{
+    max-width: 700px;
+    object-fit: contain;
+}
+
+/* like and comment wrapper */
+.like-comment-wrapper{
+    width: 70%;
+    max-width: 700px;
+    display: flex;
+    justify-content: space-around;
+}
+
+.like-comment-wrapper img{
+    cursor: pointer;
+}
+
+.all-comments-conainer{
+    position: absolute;
+    background-color: white;
+    z-index: 200;
+    width: 100%;
+    height: 80%;
+    min-height: 28rem;
+    overflow-y: auto;
+    transform: translateY(3%);
+}
+
+.none{
+    display: none;
+}
+
+li{
+    list-style-type: none;
+}
+
+/* comments and close container */
+.comments-close-container{
+    display: flex;
+    justify-content: space-between;
+    padding: 12px;
+}
+
+/* create comment form */
+.create-comment-form{
+    position: absolute;
+    bottom: 0;
+    width: 100%;
+    padding: 8px;
+    display: flex;
+    justify-content: space-evenly;
+    align-items: center;
+}
+/* input for comment text */
+.create-comment-form input{
+    width: 90%;
+    padding: 8px;
+    border-radius: 10px;
+}
+/* send button */
+.create-comment-form button{
+    all: unset;
+}
+/* send signe img in button for new comment */
+.create-comment-form img{
+    width: 100%;
+    height: 100%;
+    cursor: pointer;
+}
+.close-comment{
+    cursor: pointer;
 }

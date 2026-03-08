@@ -3,7 +3,7 @@ import path from "path";
 import User from "../model/user.ts";
 import isAuthUser, { tokenExpires } from "../middleware/auth.ts";
 import userValidation, { passwordRules } from "../utils/userValidation.ts";
-import { getChats, getLogin, getMe, getMessage, getUsers, logout, postMessage, postLogin, postUser, createChat, getAllPMMessage, getMessagesCount, deleteMessage, updateMessage, deleteChat, markAsSeen, updateUserPassword, deleteUserProfile, postForgotPassword, postResetPassword, postProfileImage, deleteProfileImage, postSearchUser, createNewPost } from "../controlers/userControlers.ts";
+import { getChats, getLogin, getMe, getMessage, getUsers, logout, postMessage, postLogin, postUser, createChat, getAllPMMessage, getMessagesCount, deleteMessage, updateMessage, deleteChat, markAsSeen, updateUserPassword, deleteUserProfile, postForgotPassword, postResetPassword, postProfileImage, deleteProfileImage, postSearchUser, createNewPost, getAllPosts } from "../controlers/userControlers.ts";
 import jwt from "jsonwebtoken"
 import isActive from "../middleware/isActive.ts";
 import uploadSingleImage from "../utils/multer";
@@ -68,24 +68,22 @@ router.use(async (req: Request, res: Response, next: NextFunction) => {
   if (!token) return next();
 
   try {
-    let userID: string;
+    let userID: string | null = null;
 
     try {
-      // Try to verify normally
       const decoded = jwt.verify(token, process.env.JWT_SECRET!) as { id: string; iat: number };
-      userID = decoded.id;
 
-      const UPDATE_TOKEN = 2 * 60 * 60; // 2 hours in SECONDS (iat is in seconds)
+      const UPDATE_TOKEN = 2 * 60 * 60; // 2 hours in seconds
       const now = Math.floor(Date.now() / 1000);
 
-      // Only refresh if token is older than 2 hours
-      if ((now - decoded.iat) < UPDATE_TOKEN) {
-        return next(); // Token is still fresh, no need to refresh
+      if (now - decoded.iat < UPDATE_TOKEN) {
+        return next(); // Token still fresh
       }
+
+      userID = decoded.id;
 
     } catch (err) {
       if (err instanceof jwt.TokenExpiredError) {
-        // Token expired — decode without verifying to get the user ID
         const decoded = jwt.decode(token) as { id: string } | null;
         if (!decoded?.id) {
           res.clearCookie("token");
@@ -93,11 +91,13 @@ router.use(async (req: Request, res: Response, next: NextFunction) => {
         }
         userID = decoded.id;
       } else {
-        // Invalid token (tampered, wrong secret, etc.)
+        // Tampered or invalid token
         res.clearCookie("token");
         return next();
       }
     }
+
+    if (!userID) return next(); // Safety guard
 
     const user = await User.findById(userID);
     if (!user) {
@@ -105,15 +105,14 @@ router.use(async (req: Request, res: Response, next: NextFunction) => {
       return next();
     }
 
-    // Issue new token
-    const secret = process.env.JWT_SECRET!;
-    const newToken = jwt.sign({ id: userID }, secret, { expiresIn: "1d" });
+    // Issue refreshed token
+    const newToken = jwt.sign({ id: userID }, process.env.JWT_SECRET!, { expiresIn: "1d" });
 
     res.cookie("token", newToken, {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
       sameSite: "lax",
-      maxAge: 24 * 60 * 60 * 1000, // 1 day
+      maxAge: 24 * 60 * 60 * 1000,
     });
 
     if (req.session) {
@@ -124,7 +123,7 @@ router.use(async (req: Request, res: Response, next: NextFunction) => {
     console.error("Token refresh error:", err);
   }
 
-  next();
+  return next();
 });
 
 // check active user 
@@ -175,12 +174,12 @@ router.post('/login-out', logout);
 router.post("/add-user", userValidation, postUser);
 
 // create new post
-router.post("/add-post", ...uploadSingleImage(path.join(__dirname, "../../uploads/posts"), "image"), createNewPost)
+router.post("/add-post", ...uploadSingleImage(path.join(__dirname, "../../uploads/posts"), "image", 500), createNewPost)
 
 // upload profile image
 router.post(
     '/upload/profile-image',
-    ...uploadSingleImage(path.join(__dirname, "../../uploads/profile"), "image"),
+    ...uploadSingleImage(path.join(__dirname, "../../uploads/profile"), "image", 120),
     postProfileImage
 );
 
@@ -191,6 +190,8 @@ router.delete('/delete/profile-image', deleteProfileImage);
 router.get('/api/v1/users', getUsers);
 // chat api
 router.get('/api/v1/chats', getChats);
+// post api
+router.get('/api/v1/posts', getAllPosts);
 // get me route
 router.get('/api/v1/me', getMe);
 // message crud operations

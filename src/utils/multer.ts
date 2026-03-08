@@ -4,7 +4,7 @@ import fs from "fs";
 import path from "path";
 import sharp from "sharp";
 
-export default function uploadSingleImage(uploadDir: string, fieldName: string): RequestHandler[] {
+export default function uploadSingleImage(uploadDir: string, fieldName: string, size: number): RequestHandler[] {
     if (!fs.existsSync(uploadDir)) {
         fs.mkdirSync(uploadDir, { recursive: true });
     }
@@ -60,7 +60,7 @@ export default function uploadSingleImage(uploadDir: string, fieldName: string):
 
             await sharp(filePath)
 
-                .resize(120, 120, { fit: "inside", withoutEnlargement: true })
+                .resize(size, size, { fit: "inside", withoutEnlargement: true })
 
                 .toFormat(format) 
 

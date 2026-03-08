@@ -11,7 +11,7 @@
 <body>
     <main id="content-area">
 
-        <section id="post-wrapper">
+        <section id="create-post-wrapper">
             <form id="post-cnt" action="/add-post" enctype="multipart/form-data" method="POST">
                 <textarea name="text" id="text" placeholder="What's on your mind?"></textarea>
 
@@ -32,6 +32,8 @@
                 </div>
             </form>
         </section>
+
+        <section id="posts-container"></section>
 
     </main>
 <script src="/socket.io/socket.io.js"></script>

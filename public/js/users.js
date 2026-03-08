@@ -63,15 +63,19 @@ async function getUsers() {
             const userDiv = document.createElement('div');
             userDiv.className = 'user-cnt';
             userDiv.innerHTML = `
+                <div>
+                    ${user.image 
+                        ? `<img class="profile-image" src="${user.image}" id="avatar-preview" class="profile-img">` 
+                        : `<div class="profile-image">${user.username[0].toUpperCase()}</div>`
+                    }
+                </div>
                 <h2>${user.username}</h2>
                 <h2>${user.email}</h2>
                 <div class="active-cnt">
                     ${user.active?"<div class='onsite'></div>":"<div class='ofline'></div>"}
                     <p>${user.lastActiveAgo}</p>
                 </div>
-
-                <button>Send Message</button>
-                <a href="/chat/${user._id}">Send Message</a>
+                <button class="send-message-btn"><img src="/images/header/message.png" alt="Message" /></button>
             `;
 
             // Attach click listener to this button
