@@ -6,14 +6,37 @@
     <title>Home Page</title>
     <link rel="stylesheet" href="/style.css">
     <link rel="stylesheet" href="/styles/header.css">
+    <link rel="stylesheet" href="/styles/home.css">
 </head>
 <body>
     <main id="content-area">
-        <h1>Home Page</h1>
+
+        <section id="post-wrapper">
+            <form id="post-cnt" action="/add-post" enctype="multipart/form-data" method="POST">
+                <textarea name="text" id="text" placeholder="What's on your mind?"></textarea>
+
+                <div id="preview-wrapper" style="display: none;">
+                    <img id="show-image-previw" src="" alt="Selected Image">
+                    <div id="remove-img-btn">&times;</div>
+                </div>
+                
+                <div id="post-actions">
+                    <div id="upload-cnt">
+                        <label for="image">
+                            <img src="/images/home/upload.png" alt="Upload Image">
+                            <span>Add Photo</span>
+                        </label>
+                        <input type="file" name="image" id="image" accept="image/*" />
+                    </div>
+                    <button type="submit" id="post-btn">Post</button>
+                </div>
+            </form>
+        </section>
 
     </main>
 <script src="/socket.io/socket.io.js"></script>
 <script type="module" src="/js/header.js"></script>
+<script type="module" src="/js/home.js"></script>
 
 </body>
 </html>

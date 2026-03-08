@@ -54,17 +54,17 @@ export default function uploadSingleImage(uploadDir: string, fieldName: string):
             const tempPath = filePath + ".tmp";
 
             try {
-                const ext = path.extname(req.file.originalname).toLowerCase();
-                const format = (ext === ".jpg" || ext === ".jpeg") ? "jpeg"
-                    : ext === ".png" ? "png"
-                    : ext === ".webp" ? "webp"
-                    : "jpeg";
+            const format = req.file.mimetype.split('/')[1] as keyof sharp.FormatEnum;
 
-                // ✅ Write to temp file first (avoids Windows file lock issue)
-                await sharp(filePath)
-                    .resize(120, 120, { fit: "inside", withoutEnlargement: true })
-                    .toFormat(format)
-                    .toFile(tempPath);
+            // 2. Use it directly in Sharp
+
+            await sharp(filePath)
+
+                .resize(120, 120, { fit: "inside", withoutEnlargement: true })
+
+                .toFormat(format) 
+
+                .toFile(tempPath);
 
                 // ✅ Delete original, rename temp to original
                 fs.unlinkSync(filePath);

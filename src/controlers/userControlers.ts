@@ -11,6 +11,7 @@ import isAuthUser from "../middleware/auth.ts";
 import crypto from "crypto";
 import SendEmail from "../utils/nodemailer.ts";
 import fs from 'fs';
+import Post from "../model/post.ts";
 
 
 export const postUser = async (req: Request, res: Response) => {
@@ -827,5 +828,36 @@ export const postSearchUser = async (req: Request, res: Response) => {
 
   } catch (error) {
     return res.status(500).json({ message: "Internal server error!" });
+  }
+};
+
+export const createNewPost = async (req: Request, res: Response) => {
+  const { text } = req.body;
+  const file = req.file;
+  const decoded = jwt.verify(req.cookies.token, process.env.JWT_SECRET!) as { id: string };
+  const userID = new mongoose.Types.ObjectId(decoded.id);
+
+  try {
+    // 1. Validation: Ensure either text was written OR a file was uploaded
+    if (!text && !file) {
+      return res.status(400).json({ message: "Please provide text or an image!" });
+    }
+
+    // 2. Prepare the data for the database
+    const postData = {
+      text: text || undefined,
+      image: file ? `/uploads/posts/${file.filename}` : undefined,
+      user: userID
+    };
+
+    // 3. Create the post
+    await Post.create(postData);
+
+    // 4. Success Response
+    res.status(201).redirect('/');
+
+  } catch (error) {
+    console.error("Post Creation Error:", error);
+    res.status(500).json({ message: "Internal server error while creating post." });
   }
 };

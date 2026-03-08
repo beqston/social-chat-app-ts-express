@@ -1,0 +1,132 @@
+/* Container Layout */
+#content-area {
+    display: flex;
+    justify-content: center;
+    padding: 20px;
+    background-color: #f0f2f5; /* Light grey background like most feeds */
+    min-height: 100vh;
+}
+
+#post-wrapper {
+    width: 100%;
+    max-width: 600px;
+}
+
+/* Post Form Card */
+#post-cnt {
+    background: #ffffff;
+    border-radius: 8px;
+    padding: 16px;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+}
+
+/* Textarea Styling */
+#text {
+    width: 100%;
+    border: none;
+    outline: none;
+    resize: none;
+    font-size: 1.1rem;
+    font-family: inherit;
+    min-height: 100px;
+    margin-bottom: 10px;
+    color: #1c1e21;
+}
+
+#text::placeholder {
+    color: #65676b;
+}
+
+/* Bottom Actions Bar */
+#post-actions {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-top: 1px solid #e4e6eb;
+    padding-top: 12px;
+}
+
+/* Custom Upload Button */
+#upload-cnt input[type="file"] {
+    display: none; /* Hide the default browser input */
+}
+
+#upload-cnt label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 12px;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: background 0.2s;
+    color: #65676b;
+    font-weight: 600;
+}
+
+#upload-cnt label:hover {
+    background-color: #f2f2f2;
+}
+
+#upload-cnt img {
+    width: 24px;
+    height: 24px;
+}
+
+/* Submit Button */
+#post-btn {
+    background-color: #1877f2;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    padding: 8px 20px;
+    font-weight: 600;
+    font-size: 0.95rem;
+    cursor: pointer;
+    transition: filter 0.2s;
+}
+
+#post-btn:hover {
+    filter: brightness(0.9);
+}
+
+#post-btn:active {
+    transform: scale(0.98);
+}
+
+#preview-wrapper {
+    position: relative;
+    width: 100%;
+    margin-bottom: 15px;
+    border-radius: 12px;
+    overflow: hidden;
+    background: #f8f9fa;
+    border: 1px solid #e4e6eb;
+}
+
+#show-image-previw {
+    width: 100%;
+    max-height: 400px;
+    object-fit: contain; 
+    display: block;
+}
+
+#remove-img-btn {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    background: rgba(0, 0, 0, 0.5);
+    color: white;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    font-size: 20px;
+    transition: background 0.2s;
+}
+
+#remove-img-btn:hover {
+    background: rgba(220, 53, 69, 0.9); /* Red on hover */
+}
