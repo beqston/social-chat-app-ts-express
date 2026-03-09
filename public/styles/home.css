@@ -6,6 +6,7 @@
     padding: 20px;
     background-color: #f0f2f5; 
     min-height: 100vh;
+    position: relative;
 }
 
 #create-post-wrapper {
@@ -155,7 +156,7 @@
     place-items: center;
     row-gap: 1rem;
     border-radius: 12px;
-    position: relative;
+    /* position: relative; */
 }
 
 /* text of post */
@@ -182,15 +183,20 @@
     cursor: pointer;
 }
 
-.all-comments-conainer{
-    position: absolute;
-    background-color: white;
-    z-index: 200;
+
+/* post's comment main wrapper */
+.all-comments-container{
+    position: sticky;
+    bottom: 12rem;
+    background-color: cadetblue;
     width: 100%;
-    height: 80%;
-    min-height: 28rem;
-    overflow-y: auto;
+    height: 480px;
     transform: translateY(3%);
+    display: none;
+    padding-bottom: 20px;
+    overflow-y: auto;
+    flex-direction: column;
+    justify-content: space-between;
 }
 
 .none{
@@ -210,19 +216,21 @@ li{
 
 /* create comment form */
 .create-comment-form{
-    position: absolute;
-    bottom: 0;
+    position: sticky;
+    bottom: 0px;
     width: 100%;
     padding: 8px;
     display: flex;
     justify-content: space-evenly;
     align-items: center;
 }
-/* input for comment text */
-.create-comment-form input{
+/* input for comment text, textarea tag */
+.create-comment-form textarea{
+    outline: none;
     width: 90%;
     padding: 8px;
     border-radius: 10px;
+    resize: none;
 }
 /* send button */
 .create-comment-form button{
@@ -237,3 +245,65 @@ li{
 .close-comment{
     cursor: pointer;
 }
+
+/* add comment alert */
+#error-message-p, #success-message-p{
+    position: absolute;
+    right: 50%;
+    top: 50%;
+    min-width: 200px;
+    max-width: 300px;
+    text-align: center;
+    padding: 18px;
+    z-index: 100;
+    border-radius: 12px;
+    background-color: #3f17de;
+    display: none;
+}
+
+/* profile image style */
+.profile-image{
+    width: 30px;
+    height: 30px;
+    background-color: green;
+    border-radius: 50%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    color: white;
+    font-weight: 300;
+    font-size: 18px;
+    line-height: 40px;
+}
+
+/* comment main container */
+.comment-container {
+    padding: 10px 8px;
+    width: 100%;
+    display: flex;
+    column-gap: 12px;
+    align-items: center; 
+}
+
+/* comment content */
+.comment-content {
+    background-color: #f0f2f5;
+    padding: 12px 14px;
+    border-radius: 18px;
+    display: flex;
+    flex-direction: column;
+    width: fit-content;
+    max-width: 100%;
+    background-color: red;
+}
+
+/* comment close img */
+.close-comment-window{
+   cursor: pointer;
+   max-width: 32px;
+   max-height: 32px;
+   position: sticky;
+   top: 12px;
+}
+
+

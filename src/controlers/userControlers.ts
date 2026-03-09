@@ -12,6 +12,7 @@ import crypto from "crypto";
 import SendEmail from "../utils/nodemailer.ts";
 import fs from 'fs';
 import Post from "../model/post.ts";
+import Comment from "../model/comment.ts";
 
 
 export const postUser = async (req: Request, res: Response) => {
@@ -881,3 +882,61 @@ export const getAllPosts = async (req: Request, res: Response) => {
   }
 };
 
+export const postComment = async (req: Request, res: Response) => {
+  const { text, postId } = req.body;
+
+  try {
+    // ✅ Token verification inside try/catch
+    const decoded = jwt.verify(
+      req.cookies.token,
+      process.env.JWT_SECRET!
+    ) as { id: string };
+    const userId = new mongoose.Types.ObjectId(decoded.id);
+
+    if (!text) {
+      return res.status(400).json({ message: "Please provide text" });
+    }
+
+    if (!postId) {
+      return res.status(400).json({ message: "Something went wrong!" });
+    }
+
+    // ✅ Validate that the post actually exists
+    const postExists = await Post.findById(postId);
+    if (!postExists) {
+      return res.status(404).json({ message: "Post not found" });
+    }
+
+    await Comment.create({
+      text,
+      user: userId,
+      post: postId,
+    });
+
+    res.status(201).json({ message: "Comment added successfully" });
+  } catch (error) {
+    // ✅ Handle JWT errors specifically
+    if (error instanceof jwt.JsonWebTokenError) {
+      return res.status(401).json({ message: "Invalid or missing token" });
+    }
+    res.status(500).json({ message: "Internal server error" });
+  }
+};
+
+
+export const getPostComments = async (req: Request, res: Response) => {
+  const { postId } = req.params;
+
+  try {
+    const postExists = await Post.findById(postId);
+    if (!postExists) return res.status(404).json({ message: "Post not found" });
+
+    const comments = await Comment.find({ post: postId })
+      .populate("user", "username image") 
+      .sort({ createdAt: 1 });
+
+    res.status(200).json({ comments });
+  } catch (error) {
+    res.status(500).json({ message: "Internal server error" });
+  }
+};
