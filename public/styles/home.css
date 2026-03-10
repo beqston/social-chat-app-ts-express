@@ -23,6 +23,14 @@
     box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
 }
 
+
+.post-title{
+    background-color: whitesmoke;
+    width: 100%;
+    text-align: center;
+    border-bottom: 1px solid gainsboro;
+}
+
 /* Textarea Styling */
 #text {
     width: 100%;
@@ -51,7 +59,7 @@
 
 /* Custom Upload Button */
 #upload-cnt input[type="file"] {
-    display: none; /* Hide the default browser input */
+    display: none; 
 }
 
 #upload-cnt label {
@@ -156,7 +164,6 @@
     place-items: center;
     row-gap: 1rem;
     border-radius: 12px;
-    /* position: relative; */
 }
 
 /* text of post */
@@ -186,10 +193,12 @@
 
 /* post's comment main wrapper */
 .all-comments-container{
-    position: sticky;
+    position: fixed;
     bottom: 12rem;
-    background-color: cadetblue;
-    width: 100%;
+    margin: 0 auto;
+    z-index: 10;
+    background-color: rgb(180, 172, 172);
+    width: 50%;
     height: 480px;
     transform: translateY(3%);
     display: none;
@@ -263,8 +272,8 @@ li{
 
 /* profile image style */
 .profile-image{
-    width: 30px;
-    height: 30px;
+    width: 40px;
+    height: 40px;
     background-color: green;
     border-radius: 50%;
     display: flex;
@@ -294,7 +303,6 @@ li{
     flex-direction: column;
     width: fit-content;
     max-width: 100%;
-    background-color: red;
 }
 
 /* comment close img */
@@ -306,4 +314,9 @@ li{
    top: 12px;
 }
 
-
+/* user link style */
+.comment-container a{
+    font-weight: 700;
+    font-size: 18px;
+    margin-bottom: 4px;
+}

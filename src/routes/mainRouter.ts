@@ -3,7 +3,7 @@ import path from "path";
 import User from "../model/user.ts";
 import isAuthUser, { tokenExpires } from "../middleware/auth.ts";
 import userValidation, { passwordRules } from "../utils/userValidation.ts";
-import { getChats, getLogin, getMe, getMessage, getUsers, logout, postMessage, postLogin, postUser, createChat, getAllPMMessage, getMessagesCount, deleteMessage, updateMessage, deleteChat, markAsSeen, updateUserPassword, deleteUserProfile, postForgotPassword, postResetPassword, postProfileImage, deleteProfileImage, postSearchUser, createNewPost, getAllPosts, postComment, getPostComments } from "../controlers/userControlers.ts";
+import { getChats, getLogin, getMe, getMessage, getUsers, logout, postMessage, postLogin, postUser, createChat, getAllPMMessage, getMessagesCount, deleteMessage, updateMessage, deleteChat, markAsSeen, updateUserPassword, deleteUserProfile, postForgotPassword, postResetPassword, postProfileImage, deleteProfileImage, postSearchUser, createNewPost, getAllPosts, postComment, getPostComments, getOtherUserProfile, getMyProfile } from "../controlers/userControlers.ts";
 import jwt from "jsonwebtoken"
 import isActive from "../middleware/isActive.ts";
 import uploadSingleImage from "../utils/multer";
@@ -147,6 +147,11 @@ router.get('/users', async(req: Request, res: Response) => {
   res.sendFile(path.join(__dirname, '../pages/users.html'));
 });
 
+// get user page
+router.get('/user/:id', async(req: Request, res: Response) => {
+  res.sendFile(path.join(__dirname, '../pages/user.html'));
+});
+
 router.get('/register', (req: Request, res: Response) => {
   res.sendFile(path.join(__dirname, '../pages/register.html'));
 });
@@ -191,8 +196,15 @@ router.post(
 // Delete Profile Image
 router.delete('/delete/profile-image', deleteProfileImage);
 
-// user api
+// all users api
 router.get('/api/v1/users', getUsers);
+
+// one user api
+router.get('/api/v1/user', getMyProfile);
+
+// get other user profile
+router.get('/api/v1/user/:id', getOtherUserProfile);
+
 // chat api
 router.get('/api/v1/chats', getChats);
 // post api

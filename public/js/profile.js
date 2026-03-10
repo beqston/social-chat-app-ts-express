@@ -18,16 +18,11 @@ async function getProfile() {
     try {
         profileCNT.innerHTML = "<p>Loading profile...</p>";
         
-        const [resMe, resUsers] = await Promise.all([
-            fetch("/api/v1/me"),
-            fetch("/api/v1/users")
-        ]);
+        const res = await fetch('/api/v1/user');
 
-        if (!resMe.ok || !resUsers.ok) throw new Error("Could not fetch user data");
+        if (!res.ok) throw new Error("Could not fetch user data");
 
-        const userId = await resMe.json();
-        const users = await resUsers.json();
-        const user = users.data.find((u) => u._id == userId);
+        const {user} = await res.json();
 
         if (!user) return alert("User Not Found");
 

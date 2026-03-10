@@ -1,0 +1,39 @@
+main{
+    display: flex;
+    height: 90dvh;
+    justify-content: center;
+    background-color: white;
+}
+
+/* user profile main container */
+#user{
+    width: 50%;
+    padding: 2rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    background-color: whitesmoke;
+    margin: 0 auto;
+    border-radius: 12px;
+}
+
+#user h2{
+    margin-top: 12px;
+    font-weight: 800;
+    font-size:2rem;
+}
+
+/* profile image style */
+.profile-image{
+    width: 120px;
+    height: 120px;
+    background-color: green;
+    border-radius: 50%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    color: white;
+    font-weight: 300;
+    font-size: 18px;
+    line-height: 40px;
+}

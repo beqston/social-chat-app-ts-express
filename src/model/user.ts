@@ -1,4 +1,4 @@
-import {Schema, model, Document, HydratedDocument} from 'mongoose'
+import mongoose, {Schema, model, Document, HydratedDocument} from 'mongoose'
 import validator from 'validator';
 import bcrypt from "bcrypt"
 
@@ -16,49 +16,54 @@ interface IUser extends Document {
   lastActiveAgo?: string;
   createdAt?: Date;
   updatedAt?: Date;
+  posts?:mongoose.Types.ObjectId[]
 }
 
 const userSchema = new Schema<IUser>({
-    username:{
-        type:String,
-        trim:true,
-        unique: true,
-        lowercase: true,
-        minlength:[4, "Username min length must be 4 cheracter"],
-        maxlength:[32, "Username min length must be 4 cheracter"],
-        required:[true, "You have must be username"]
-    },
-    email:{
-        type: String,
-        unique:true,
-        trim:true,
-        required:[true, "Yue have must be email"],
-        validate:{
-            validator: (email:string)=>validator.isEmail(email),
-            message: "Please provide a valid email address"
-        }
-    },
-    password:{
-        type:String,
-        trim:true,
-        required:[true, "Yue have must be password"],
-        select:false,
-        validate:{
-            validator:function(value){
-                // Require at least one uppercase, lowercase, number, and special character
-                return /[0-9A-Za-z]/.test(value);
-            }
-        }
-    },
-    image:String,
-    active:{
-        type:Boolean,
-        default:true
-    },
-    lastActiveAt: {
-      type: Date,
-      default: Date.now
+  username:{
+    type:String,
+    trim:true,
+    unique: true,
+    lowercase: true,
+    minlength:[4, "Username min length must be 4 cheracter"],
+    maxlength:[32, "Username min length must be 4 cheracter"],
+    required:[true, "You have must be username"]
   },
+  email:{
+    type: String,
+    unique:true,
+    trim:true,
+    required:[true, "Yue have must be email"],
+    validate:{
+      validator: (email:string)=>validator.isEmail(email),
+      message: "Please provide a valid email address"
+    }
+  },
+  password:{
+    type:String,
+    trim:true,
+    required:[true, "Yue have must be password"],
+    select:false,
+    validate:{
+      validator:function(value){
+        // Require at least one uppercase, lowercase, number, and special character
+        return /[0-9A-Za-z]/.test(value);
+    }
+  }
+  },
+  image:String,
+  active:{
+      type:Boolean,
+      default:true
+  },
+  lastActiveAt: {
+    type: Date,
+    default: Date.now
+  },
+  posts: [{
+      type: Schema.Types.ObjectId,
+      ref: "Post",
+  }],
   resetPasswordToken: { type: String },
   resetPasswordExpire: { type: Date }
   },

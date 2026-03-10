@@ -200,6 +200,22 @@ export const getUsers =  async(req:Request, res:Response)=>{
       })
   }
 }
+export const getMyProfile =  async(req:Request, res:Response)=>{
+  const decoded = jwt.verify(req.cookies.token, process.env.JWT_SECRET!) as { id: string };
+  const userID = new mongoose.Types.ObjectId(decoded.id)
+  try {
+      const user = await User.findById(userID);
+      res.json({
+          user
+      })
+      
+  } catch (error) {
+      res.status(500).json({
+          status:'fail',
+          message:error
+      })
+  }
+}
 
 export const getMe = (req:Request, res:Response)=>{
   try {
@@ -940,3 +956,21 @@ export const getPostComments = async (req: Request, res: Response) => {
     res.status(500).json({ message: "Internal server error" });
   }
 };
+
+export const getOtherUserProfile = async (req: Request, res: Response) =>{
+  const {id} = req.params;
+  try {
+    const findUser = await User.findById(id);
+    if(!findUser){
+      return res.status(404).json({message:"User nor found!!"})
+    }
+
+    res.status(200).json({user:findUser})
+  } catch (error) {
+    res.status(500).json({
+      message:"Interval server error"
+    })
+  }
+}
+
+

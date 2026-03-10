@@ -23,11 +23,11 @@ const postSchema = new Schema<IPost>({
         ref:"User",
         required: [true, "Post must belong to a user"],
     },
-    likes: {
+    likes: [{
       type: [Schema.Types.ObjectId],
       ref: "User",
       default: [],
-    }
+    }]
 },
 {
     timestamps: true,

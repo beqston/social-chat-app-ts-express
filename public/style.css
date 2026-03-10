@@ -22,3 +22,32 @@ a{
     left: 30%;
     z-index: 20;
 }
+
+.active-cnt{
+    display: flex;
+    column-gap: 12px;
+    align-items: center;
+}
+.onsite, .ofline{
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+}
+.onsite{
+    background-color: green;
+}
+.ofline{
+    background-color: red;
+}
+
+.send-message-btn{
+    all: unset;
+    padding: 4px;
+    border-radius: 8px;
+    cursor: pointer;
+    background-color: aliceblue;
+}
+
+.send-message-btn img{
+    background-color: azure;
+}

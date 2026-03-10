@@ -63,7 +63,7 @@ async function getAllPosts() {
             postWrapper.className = "post-wrapper";
 
             postWrapper.innerHTML = `
-                ${post.text ? `<h3>${post.text}</h3>` : ""}
+                ${post.text ? `<h3 class="post-title">${post.text}</h3>` : ""}
                 ${post.image ? `<img src="${post.image}" alt="Post content" />` : ""}
 
                 <div class="like-comment-wrapper">
@@ -78,11 +78,12 @@ async function getAllPosts() {
                                return `<li class="comment-container">
                                     <div>
                                         ${c.user.image 
-                                            ? `<img class="profile-image" src="${c.user.image}" id="avatar-preview" class="profile-img">` 
+                                            ? `<img class="profile-image" src="${c.user.image}" id="avatar-preview" class="profile-img"alt="${c.user.username}" />` 
                                             : `<div class="profile-image">${c.user.username[0].toUpperCase()}</div>`
                                         }
                                     </div>
                                     <div>
+                                        <a href="/user/${c.user._id}">${c.user.username}</a>
                                         <p class="comment-content">${c.text}</p>
                                     </div>
                                 </li>`
@@ -112,6 +113,7 @@ async function getAllPosts() {
             });
 
             // 4. Scope listener to THIS specific form
+            // add new comment
             const commentForm = postWrapper.querySelector(".create-comment-form");
             commentForm.addEventListener("submit", async (event) => {
                 event.preventDefault();
@@ -156,10 +158,12 @@ async function getAllPosts() {
                                 }
                             </div>
                             <div>
+                                <a href="/user/${lastComment._id}">${lastComment.user.username}</a>
                                 <p class="comment-content">${lastComment.text}</p>
                             </div>
                         </li>`;
                    ul.insertAdjacentHTML('beforeend', newCommentHTML);
+                   commentMainContainer.scrollTop = commentMainContainer.scrollHeight;
 
                 } catch (err) {
                     showMessage(err.message, "red");
@@ -182,31 +186,25 @@ async function getAllPosts() {
             closeCommentWindow.addEventListener("click", ()=>{
                 commentMainContainer.style.display = "none"
             });
-
-            // if opened comment window and wi click other or scroll, close comment window
-            window.addEventListener("pointerdown", (event) => {
-                const allWindows = document.querySelectorAll(".all-comments-container");
-                
-                allWindows.forEach(container => {
-                        // 1. Get the REAL display value, even if it's in a CSS file
-                        const currentDisplay = window.getComputedStyle(container).display;
-                        
-                        const postWrapper = container.closest(".post-wrapper");
-                        const openBtn = postWrapper?.querySelector(".comment-btn");
-
-                        // 2. Check if it's visible and if the click was outside
-                        if (currentDisplay !== "none" && 
-                            !container.contains(event.target) && 
-                            (openBtn && !openBtn.contains(event.target))) {
-                            container.style.display = "none";
-                        }
-                    });
-            });
         }
     } catch (error) {
         postContainer.innerHTML = `<h2>${error.message}</h2>`;
     }
 }
+
+    //  Listen for the window scrolling
+    window.addEventListener("scroll", () => {
+        // Find all comment containers
+        const allContainers = document.querySelectorAll(".all-comments-container");
+
+        allContainers.forEach(container => {
+            // Only close if the container is currently visible
+            // We use getComputedStyle to check the REAL display state
+            if (window.getComputedStyle(container).display !== "none") {
+                container.style.display = "none";
+            }
+        });
+    }, { passive: true }); 
 
 async function getPostComments(postId) {
     try {
