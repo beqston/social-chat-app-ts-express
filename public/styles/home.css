@@ -137,12 +137,20 @@
     font-size: 20px;
     transition: background 0.2s;
 }
-
 #remove-img-btn:hover {
     background: rgba(220, 53, 69, 0.9); /* Red on hover */
 }
-
-
+/* post container header, where are image and username */
+.post-head-container{
+    width: 100%;
+    display: flex;
+    align-items: center;
+}
+.post-head-container a{
+    display: flex;
+    column-gap: 0.8rem;
+    font-size: 2rem;
+}
 /* post main container */
 #posts-container{
     padding-top: 2rem;
@@ -293,7 +301,14 @@ li{
     column-gap: 12px;
     align-items: center; 
 }
-
+/* comment author and comment text */
+.comment-container .username-comment{
+    display: flex;
+    flex-direction: column;
+}
+.comment-container .profile-image{
+    transform: translateY(12px);
+}
 /* comment content */
 .comment-content {
     background-color: #f0f2f5;
@@ -319,4 +334,5 @@ li{
     font-weight: 700;
     font-size: 18px;
     margin-bottom: 4px;
+    color: #1c1e21;
 }

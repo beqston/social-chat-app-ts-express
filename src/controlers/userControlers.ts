@@ -870,7 +870,10 @@ export const createNewPost = async (req: Request, res: Response) => {
     };
 
     // 3. Create the post
-    await Post.create(postData);
+    const post = await Post.create(postData);
+    await User.findByIdAndUpdate(userID, {
+      $push: { posts: post._id }
+    }, { new: true });
 
     // 4. Success Response
     res.status(201).redirect('/');
@@ -884,7 +887,7 @@ export const createNewPost = async (req: Request, res: Response) => {
 export const getAllPosts = async (req: Request, res: Response) => {
   try {
     // find all post and sort, new post is first
-    const posts = await Post.find().sort({ createdAt: -1 });
+    const posts = await Post.find().populate("user", "_id username image").sort({ createdAt: -1 });
 
     // Check for an empty array if you want to send a specific message
     if (posts.length === 0) {
@@ -960,7 +963,7 @@ export const getPostComments = async (req: Request, res: Response) => {
 export const getOtherUserProfile = async (req: Request, res: Response) =>{
   const {id} = req.params;
   try {
-    const findUser = await User.findById(id);
+    const findUser = await User.findById(id).populate("posts");
     if(!findUser){
       return res.status(404).json({message:"User nor found!!"})
     }
@@ -973,4 +976,28 @@ export const getOtherUserProfile = async (req: Request, res: Response) =>{
   }
 }
 
+export const postLike = async (req: Request, res: Response) => {
+  const { id } = req.params;
+  const decoded = jwt.verify(req.cookies.token, process.env.JWT_SECRET!) as { id: string };
+  const userId = new mongoose.Types.ObjectId(decoded.id);
 
+  try {
+    const post = await Post.findById(id);
+    if (!post) {
+      return res.status(404).json({ message: "Post not found!!" });
+    }
+
+    const isLiked = post.likes.some((likeId) => likeId.toString() === userId.toString());
+
+    if (isLiked) {
+      await Post.findByIdAndUpdate(id, { $pull: { likes: userId } });
+      return res.status(200).json({ message: "Like removed" });
+    } 
+
+    await Post.findByIdAndUpdate(id, { $addToSet: { likes: userId } });
+    return res.status(201).json({ message: "Like added" });
+
+  } catch (error) {
+    res.status(500).json({ message: "Internal server error!!" });
+  }
+};

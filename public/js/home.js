@@ -49,6 +49,10 @@ async function getAllPosts() {
     try {
         const res = await fetch("/api/v1/posts");
         if (!res.ok) throw new Error("Could not fetch posts");
+
+        const resMe = await fetch("/api/v1/me");
+        const userId = await resMe.json()
+
         
         const posts = await res.json();
         postContainer.innerHTML = '';
@@ -58,16 +62,38 @@ async function getAllPosts() {
             const commentData = await getPostComments(post._id);
             const comments = commentData.comments || [];
 
+            // if is liked post
+            const isLiked = post.likes.some((likeId) => likeId.toString() === userId.toString());
+
+
             // Create post element
             const postWrapper = document.createElement("div");
             postWrapper.className = "post-wrapper";
 
             postWrapper.innerHTML = `
-                ${post.text ? `<h3 class="post-title">${post.text}</h3>` : ""}
-                ${post.image ? `<img src="${post.image}" alt="Post content" />` : ""}
+
+                <div class="post-head-container">
+                    <a href="/user/${post.user._id}">
+                        ${post.user.image 
+                            ? `<img class="profile-image" src="${post.user.image}" id="avatar-preview" class="profile-img"alt="${c.user.username}" />` 
+                            : `<div class="profile-image">${post.user.username[0].toUpperCase()}</div>`
+                        }
+                        <p>${post.user.username}</p>
+                    </a>
+                </div>
+
+                <div class="post-user ">
+
+                    <div>
+                        ${post.text ? `<h3 class="post-title">${post.text}</h3>` : ""}
+                        ${post.image ? `<img src="${post.image}" alt="Post content" />` : ""}
+                    </div>
+                </div>
+
+
 
                 <div class="like-comment-wrapper">
-                    <img class="like-btn" src="/images/home/like.png" alt="Like">
+                    <img class="like-btn" src=${isLiked?'/images/home/isLike.png':'/images/home/like.png'} alt="Like">
                     <img class="comment-btn" src="/images/home/comment.png" alt="Comment">
                 </div>
 
@@ -76,17 +102,17 @@ async function getAllPosts() {
                         <ul class="comments-list">
                             ${comments.map(c => {
                                return `<li class="comment-container">
-                                    <div>
-                                        ${c.user.image 
-                                            ? `<img class="profile-image" src="${c.user.image}" id="avatar-preview" class="profile-img"alt="${c.user.username}" />` 
-                                            : `<div class="profile-image">${c.user.username[0].toUpperCase()}</div>`
-                                        }
-                                    </div>
-                                    <div>
-                                        <a href="/user/${c.user._id}">${c.user.username}</a>
-                                        <p class="comment-content">${c.text}</p>
-                                    </div>
-                                </li>`
+                                        <div>
+                                            ${c.user.image 
+                                                ? `<img class="profile-image" src="${c.user.image}" id="avatar-preview" class="profile-img"alt="${c.user.username}" />` 
+                                                : `<div class="profile-image">${c.user.username[0].toUpperCase()}</div>`
+                                            }
+                                        </div>
+                                        <div class="username-comment">
+                                            <a href="/user/${c.user._id}">${c.user.username}</a>
+                                            <p class="comment-content">${c.text}</p>
+                                        </div>
+                                    </li>`
                             }).join('')}
                         </ul>
                         <div class="close-comment-window"><img src="images/home/close.png" /></div>
@@ -101,6 +127,30 @@ async function getAllPosts() {
             `;
 
             postContainer.appendChild(postWrapper);
+
+            const likeButton = postWrapper.querySelector('.like-comment-wrapper .like-btn');
+            likeButton.addEventListener("click", async()=>{
+                const img = postWrapper.querySelector(".like-comment-wrapper .like-btn");
+               
+                try {
+                    const res = await fetch("/like-post/"+post._id, {
+                        method:"POST"
+                    });
+                    if(!res.ok) throw new Error("Something Wrong!!");
+
+                    if(res.status == 201){
+                        img.src ='/images/home/isLike.png'
+                        showMessage("Post liked succsesfully", "green");
+                    }else{
+                        img.src ='/images/home/like.png'
+                        showMessage("Post unliked succsesfully", "green");
+                    }
+                } catch (error) {
+                    showMessage(`${error.message}`, "red");
+                }
+
+            });
+            
 
             // if key event is Enter submit comment form
             const textarea = postWrapper.querySelector("textarea");

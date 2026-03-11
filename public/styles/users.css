@@ -24,3 +24,8 @@
     font-size: 22px;
     line-height: 40px;
 }
+
+.send-message-btn{
+    all: unset;
+    cursor: pointer;
+}
