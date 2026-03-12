@@ -926,10 +926,22 @@ export const postComment = async (req: Request, res: Response) => {
       return res.status(404).json({ message: "Post not found" });
     }
 
-    await Comment.create({
+    const newComment = await Comment.create({
       text,
       user: userId,
       post: postId,
+    });
+
+    // --- SOCKET.IO LOGIC ---
+    const io = req.app.get("io");
+    
+    // Populate the user so the client has username + image
+    await newComment.populate("user", "username image _id"); 
+
+    // Emit to all connected clients
+    io.emit("new_comment", { 
+        postId: postId, 
+        comment: newComment 
     });
 
     res.status(201).json({ message: "Comment added successfully" });
@@ -1001,3 +1013,46 @@ export const postLike = async (req: Request, res: Response) => {
     res.status(500).json({ message: "Internal server error!!" });
   }
 };
+
+export const editComment = async (req: Request, res: Response) => {
+  const { commentId } = req.params; 
+  const { text } = req.body;
+
+  // 1. Don't allow empty comments
+  if (!text || text.trim() === "") {
+    return res.status(400).json({ message: "Comment text cannot be empty!" });
+  }
+
+  try {
+    // 2. Update the document
+    const updatedComment = await Comment.findByIdAndUpdate(
+      commentId, 
+      { text }, 
+      { new: true } 
+    );
+
+    // 3. Check if the comment actually existed
+    if (!updatedComment) {
+      return res.status(404).json({ message: "Comment not found!" });
+    }
+
+    return res.status(200).json({ 
+      message: "Comment edited successfully!!",
+      comment: updatedComment
+    });
+
+  } catch (error) {
+    console.error("Error editing comment:", error); // Helpful for your terminal
+    return res.status(500).json({ message: "Internal server error!!" });
+  }
+};
+
+export const deleteComment = async (req: Request, res: Response) =>{
+  const {comentId} = req.params;
+  console.log(comentId)
+  try {
+    res.status(200).json({message:"comment deleted!!"})
+  } catch (error) {
+    res.status(500).json({message:"Intervalserver error!!"})
+  }
+}

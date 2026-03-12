@@ -1,8 +1,8 @@
-// 1. Fix the selectors (Make sure these IDs exist in your HTML)
-const errorMessageElement = document.getElementById("error-message-p"); // Change ID to match your HTML
-const successMessageElement = document.getElementById("success-message-p"); // Change ID to match your HTML
+// Selectors
+const errorMessageElement = document.getElementById("error-message-p");
+const successMessageElement = document.getElementById("success-message-p");
 
-// Existing Image Logic
+// Image Logic
 const imageInput = document.getElementById("image");
 const previewImg = document.getElementById("show-image-previw");
 const previewWrapper = document.getElementById("preview-wrapper");
@@ -11,35 +11,26 @@ const removeBtn = document.getElementById("remove-img-btn");
 imageInput.addEventListener("change", (e) => {
     const file = e.target.files[0];
     if (file) {
-        // Use URL.createObjectURL directly
         previewImg.src = URL.createObjectURL(file);
         previewWrapper.style.display = "block";
     }
 });
 
 removeBtn.addEventListener("click", () => {
-    imageInput.value = ""; 
+    imageInput.value = "";
     previewWrapper.style.display = "none";
     previewImg.src = "";
 });
 
 const postContainer = document.getElementById("posts-container");
-
-// 2. Updated showMessage function
 const statusMessage = document.getElementById("status-message");
 
 function showMessage(message, color) {
-    if (!statusMessage) return; // Safety check
-
-    // 1. Set the content and color
+    if (!statusMessage) return;
     statusMessage.textContent = message;
-    statusMessage.style.backgroundColor = color; // Use as background for better visibility
+    statusMessage.style.backgroundColor = color;
     statusMessage.style.display = "block";
-
-    // 2. Add a simple fade-in effect (optional)
     statusMessage.style.opacity = "1";
-
-    // 3. Auto-hide after 3 seconds
     setTimeout(() => {
         statusMessage.style.display = "none";
     }, 3000);
@@ -51,69 +42,69 @@ async function getAllPosts() {
         if (!res.ok) throw new Error("Could not fetch posts");
 
         const resMe = await fetch("/api/v1/me");
-        const userId = await resMe.json()
+        const userId = await resMe.json();
 
-        
         const posts = await res.json();
         postContainer.innerHTML = '';
 
-        // 3. Use for...of to handle async/await properly
         for (const post of posts.data) {
             const commentData = await getPostComments(post._id);
             const comments = commentData.comments || [];
 
-            // if is liked post
             const isLiked = post.likes.some((likeId) => likeId.toString() === userId.toString());
 
-
-            // Create post element
             const postWrapper = document.createElement("div");
             postWrapper.className = "post-wrapper";
 
             postWrapper.innerHTML = `
-
                 <div class="post-head-container">
                     <a href="/user/${post.user._id}">
-                        ${post.user.image 
-                            ? `<img class="profile-image" src="${post.user.image}" id="avatar-preview" class="profile-img"alt="${c.user.username}" />` 
+                        ${post.user.image
+                            ? `<img class="profile-image" src="${post.user.image}" alt="${post.user.username}" />`
                             : `<div class="profile-image">${post.user.username[0].toUpperCase()}</div>`
                         }
                         <p>${post.user.username}</p>
                     </a>
                 </div>
 
-                <div class="post-user ">
-
+                <div class="post-user">
                     <div>
                         ${post.text ? `<h3 class="post-title">${post.text}</h3>` : ""}
                         ${post.image ? `<img src="${post.image}" alt="Post content" />` : ""}
                     </div>
                 </div>
 
-
-
                 <div class="like-comment-wrapper">
-                    <img class="like-btn" src=${isLiked?'/images/home/isLike.png':'/images/home/like.png'} alt="Like">
+                    <img class="like-btn" src=${isLiked ? '/images/home/isLike.png' : '/images/home/like.png'} alt="Like">
                     <img class="comment-btn" src="/images/home/comment.png" alt="Comment">
                 </div>
 
                 <div class="all-comments-container">
                     <div class="comments-close-container">
                         <ul class="comments-list">
-                            ${comments.map(c => {
-                               return `<li class="comment-container">
-                                        <div>
-                                            ${c.user.image 
-                                                ? `<img class="profile-image" src="${c.user.image}" id="avatar-preview" class="profile-img"alt="${c.user.username}" />` 
-                                                : `<div class="profile-image">${c.user.username[0].toUpperCase()}</div>`
-                                            }
-                                        </div>
-                                        <div class="username-comment">
-                                            <a href="/user/${c.user._id}">${c.user.username}</a>
+                            ${comments.map(c => `
+                                <li class="comment-container">
+                                    <div>
+                                        ${c.user.image
+                                            ? `<img class="profile-image" src="${c.user.image}" alt="${c.user.username}" />`
+                                            : `<div class="profile-image">${c.user.username[0].toUpperCase()}</div>`
+                                        }
+                                    </div>
+                                    <div class="username-comment">
+                                        <a href="/user/${c.user._id}">${c.user.username}</a>
+                                        <div class="comment-wrapper">
                                             <p class="comment-content">${c.text}</p>
+                                            <div class="comment-edit-delete-cnt">
+                                                <button class="options">...</button>
+                                                <div class="edit-delete-wrapper">
+                                                    <button class="edit">Edit</button>
+                                                    <button class="delete">Delete</button>
+                                                </div>
+                                            </div>
                                         </div>
-                                    </li>`
-                            }).join('')}
+                                    </div>
+                                </li>
+                            `).join('')}
                         </ul>
                         <div class="close-comment-window"><img src="images/home/close.png" /></div>
                     </div>
@@ -128,42 +119,178 @@ async function getAllPosts() {
 
             postContainer.appendChild(postWrapper);
 
-            const likeButton = postWrapper.querySelector('.like-comment-wrapper .like-btn');
-            likeButton.addEventListener("click", async()=>{
-                const img = postWrapper.querySelector(".like-comment-wrapper .like-btn");
-               
-                try {
-                    const res = await fetch("/like-post/"+post._id, {
-                        method:"POST"
-                    });
-                    if(!res.ok) throw new Error("Something Wrong!!");
 
-                    if(res.status == 201){
-                        img.src ='/images/home/isLike.png'
-                        showMessage("Post liked succsesfully", "green");
-                    }else{
-                        img.src ='/images/home/like.png'
-                        showMessage("Post unliked succsesfully", "green");
+            // 1. Grab all rendered comment containers inside this post
+            const commentContainers = postWrapper.querySelectorAll(".comment-container");
+
+            // 2. Loop through the containers and match them with the comments data array via the index
+            commentContainers.forEach((container, index) => {
+                // Get the specific comment data for this specific HTML element
+                const comment = comments[index]; 
+
+                const optionsBtn = container.querySelector(".options");
+                const editDeleteWrapper = container.querySelector(".edit-delete-wrapper");
+                const editButton = editDeleteWrapper?.querySelector(".edit");
+                const commentContentEl = container.querySelector(".comment-content"); // The <p> holding the text
+
+                // Safety check in case the user isn't authorized and the buttons don't exist
+                if (!optionsBtn || !editDeleteWrapper) return;
+
+                // Show/Hide Options Menu
+                optionsBtn.addEventListener("click", () => {
+                    editDeleteWrapper.style.display = "block";
+                    optionsBtn.style.display = "none";
+                });
+
+                editDeleteWrapper.addEventListener("mouseleave", () => {
+                    editDeleteWrapper.style.display = "none";
+                    optionsBtn.style.display = "block";
+                });
+
+                // Handle Edit Button Click
+                if (editButton) {
+                    editButton.addEventListener("click", (e) => {
+                        e.preventDefault();
+                        
+                        // Hide the options menu while editing
+                        editDeleteWrapper.style.display = "none";
+                        optionsBtn.style.display = "block";
+
+                        // 1. Store the original text
+                        const originalText = commentContentEl.textContent;
+
+                        // 2. Turn the comment text into an input field + Save/Cancel buttons
+                        commentContentEl.innerHTML = `
+                            <div class="edit-input-wrapper">
+                                <input type="text" class="edit-input" value="${originalText}" style="width: 100%; margin-bottom: 5px;" />
+                                <button class="save-edit-btn" style="background: green;cursor: pointer; color: white; padding: 2px 5px;">Save</button>
+                                <button class="cancel-edit-btn" style="background: gray; cursor: pointer; color: white; padding: 2px 5px;">Cancel</button>
+                            </div>
+                        `;
+
+                        const inputEl = commentContentEl.querySelector(".edit-input");
+                        const saveBtn = commentContentEl.querySelector(".save-edit-btn");
+                        const cancelBtn = commentContentEl.querySelector(".cancel-edit-btn");
+
+                        // 3. Handle Cancel
+                        cancelBtn.addEventListener("click", () => {
+                            commentContentEl.textContent = originalText; // Revert HTML back to normal text
+                        });
+
+                        // 4. Handle Save
+                        saveBtn.addEventListener("click", async () => {
+                            const newText = inputEl.value.trim();
+                            
+                            if (!newText || newText === originalText) {
+                                commentContentEl.textContent = originalText; // Revert if empty or unchanged
+                                return;
+                            }
+
+                            try {
+                                // Usually, edits use the "PUT" or "PATCH" method in REST APIs
+                                const res = await fetch("/edit-comment/" + comment._id, {
+                                    method: "PUT", // Make sure this matches your backend! (PUT, PATCH, or POST)
+                                    headers: {
+                                        "Content-Type": "application/json"
+                                    },
+                                    credentials: "include",
+                                    body: JSON.stringify({ text: newText }) // Send the new text
+                                });
+
+                                if (!res.ok) throw new Error("Failed to edit comment");
+
+                                // Update the UI with the newly saved text
+                                commentContentEl.textContent = newText;
+                                showMessage("Comment edited successfully", "green"); // Assuming you have the showMessage function from earlier
+
+                            } catch (error) {
+                                console.error(error.message);
+                                showMessage(error.message, "red");
+                                commentContentEl.textContent = originalText; // Revert back if the fetch failed
+                            }
+                        });
+                    });
+                }
+
+                // Handle Delete Button Click
+                const deleteButton = editDeleteWrapper.querySelector(".delete");
+                if (deleteButton) {
+                    deleteButton.addEventListener("click", async (e) => {
+                        e.preventDefault();
+
+                        // 1. Ask for confirmation before deleting
+                        const confirmDelete = confirm("Are you sure you want to delete this comment?");
+                        if (!confirmDelete) return; // Stop if they click "Cancel"
+
+                        try {
+                            // 2. Send the delete request to the backend
+                            const res = await fetch("/delete-comment/" + comment._id, {
+                                method: "DELETE", // Use DELETE method for removals
+                                credentials: "include"
+                            });
+
+                            if (!res.ok) {
+                                const errorData = await res.json();
+                                throw new Error(errorData.message || "Failed to delete comment");
+                            }
+
+                            // 3. Remove the comment completely from the screen
+                            container.remove(); 
+                            showMessage("Comment deleted successfully", "green");
+
+                        } catch (error) {
+                            console.error(error.message);
+                            showMessage(error.message, "red");
+                        }
+                    });
+                }
+                
+            });
+
+
+
+            // Like button
+            const likeButton = postWrapper.querySelector('.like-comment-wrapper .like-btn');
+            likeButton.addEventListener("click", async () => {
+                const img = postWrapper.querySelector(".like-comment-wrapper .like-btn");
+                try {
+                    const res = await fetch("/like-post/" + post._id, {
+                        method: "POST",
+                        credentials: "include"
+                    });
+                    if (!res.ok) throw new Error("Something Wrong!!");
+
+                    if (res.status == 201) {
+                        img.src = '/images/home/isLike.png';
+                        showMessage("Post liked successfully", "green");
+                    } else {
+                        img.src = '/images/home/like.png';
+                        showMessage("Post unliked successfully", "green");
                     }
                 } catch (error) {
                     showMessage(`${error.message}`, "red");
                 }
-
             });
-            
 
-            // if key event is Enter submit comment form
+
+            // Textarea — keydown + typing emit
             const textarea = postWrapper.querySelector("textarea");
+
             textarea.addEventListener("keydown", (event) => {
-                // Check if Enter was pressed WITHOUT the Shift key
                 if (event.key === "Enter" && !event.shiftKey) {
                     event.preventDefault();
-                    commentForm.requestSubmit(); 
+                    commentForm.requestSubmit();
                 }
             });
 
-            // 4. Scope listener to THIS specific form
-            // add new comment
+            // typing emit
+            textarea.addEventListener("input", () => {
+                socket.emit("typing_comment", {
+                    postId: post._id
+                });
+            });
+
+            // Comment form submit
             const commentForm = postWrapper.querySelector(".create-comment-form");
             commentForm.addEventListener("submit", async (event) => {
                 event.preventDefault();
@@ -187,54 +314,26 @@ async function getAllPosts() {
 
                     commentForm.reset();
                     showMessage("Comment added successfully", "green");
-                    
-                    // Optional: Update the UI immediately
-                    const ul = postWrapper.querySelector(".comments-list");
-
-                    // 1. Re-fetch the comments from the server
-                    const updatedCommentData = await getPostComments(post._id);
-                    const comments = updatedCommentData.comments || [];
-
-                    // 2. Get the very last comment (the one you just posted)
-                    const lastComment = comments[comments.length - 1];
-
-                    // 3. Build the HTML using that last comment
-                    const newCommentHTML = `
-                        <li class="comment-container">
-                            <div>
-                                ${lastComment.user.image 
-                                    ? `<img class="profile-image" src="${lastComment.user.image}" class="profile-img">` 
-                                    : `<div class="profile-image">${lastComment.user.username[0].toUpperCase()}</div>`
-                                }
-                            </div>
-                            <div>
-                                <a href="/user/${lastComment._id}">${lastComment.user.username}</a>
-                                <p class="comment-content">${lastComment.text}</p>
-                            </div>
-                        </li>`;
-                   ul.insertAdjacentHTML('beforeend', newCommentHTML);
-                   commentMainContainer.scrollTop = commentMainContainer.scrollHeight;
 
                 } catch (err) {
                     showMessage(err.message, "red");
                 }
             });
-            
 
-            // main post"s comment container
+            // Comment container
             const commentMainContainer = postWrapper.querySelector(".all-comments-container");
 
-            // open all comments window
+            // Open comments
             const openCommentWindow = postWrapper.querySelector(".comment-btn");
-            openCommentWindow.addEventListener("click", ()=>{
-                commentMainContainer.style.display="flex";
+            openCommentWindow.addEventListener("click", () => {
+                commentMainContainer.style.display = "flex";
                 commentMainContainer.scrollTop = commentMainContainer.scrollHeight;
             });
 
-            // close all comments window
+            // Close comments
             const closeCommentWindow = postWrapper.querySelector(".close-comment-window");
-            closeCommentWindow.addEventListener("click", ()=>{
-                commentMainContainer.style.display = "none"
+            closeCommentWindow.addEventListener("click", () => {
+                commentMainContainer.style.display = "none";
             });
         }
     } catch (error) {
@@ -242,19 +341,15 @@ async function getAllPosts() {
     }
 }
 
-    //  Listen for the window scrolling
-    window.addEventListener("scroll", () => {
-        // Find all comment containers
-        const allContainers = document.querySelectorAll(".all-comments-container");
-
-        allContainers.forEach(container => {
-            // Only close if the container is currently visible
-            // We use getComputedStyle to check the REAL display state
-            if (window.getComputedStyle(container).display !== "none") {
-                container.style.display = "none";
-            }
-        });
-    }, { passive: true }); 
+// Close comments on scroll
+window.addEventListener("scroll", () => {
+    const allContainers = document.querySelectorAll(".all-comments-container");
+    allContainers.forEach(container => {
+        if (window.getComputedStyle(container).display !== "none") {
+            container.style.display = "none";
+        }
+    });
+}, { passive: true });
 
 async function getPostComments(postId) {
     try {
@@ -265,4 +360,82 @@ async function getPostComments(postId) {
     }
 }
 
+// Init
 getAllPosts();
+
+// Socket.io
+const socket = io();
+
+// New comment received
+socket.on("new_comment", (data) => {
+    const allPostWrappers = document.querySelectorAll(".post-wrapper");
+
+    allPostWrappers.forEach(postWrapper => {
+        const hiddenInput = postWrapper.querySelector("input[name='postId']");
+        if (!hiddenInput || hiddenInput.value !== data.postId) return;
+
+        const ul = postWrapper.querySelector(".comments-list");
+        const newCommentHTML = `
+            <li class="comment-container">
+                <div>
+                    ${data.comment.user.image
+                        ? `<img class="profile-image" src="${data.comment.user.image}" alt="${data.comment.user.username}" />`
+                        : `<div class="profile-image">${data.comment.user.username[0].toUpperCase()}</div>`
+                    }
+                </div>
+                <div class="username-comment">
+                    <a href="/user/${data.comment.user._id}">${data.comment.user.username}</a>
+                    <div class="comment-wrapper">
+                        <p class="comment-content">${data.comment.text}</p>
+                        <div class="comment-edit-delete-cnt">
+                            <button class="options">...</button>
+                            <div>
+                                <button class="edit">Edit</button>
+                                <button class="delete">Delete</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </li>`;
+        ul.insertAdjacentHTML("beforeend", newCommentHTML);
+
+        const commentContainer = postWrapper.querySelector(".all-comments-container");
+        if (window.getComputedStyle(commentContainer).display !== "none") {
+            commentContainer.scrollTop = commentContainer.scrollHeight;
+        }
+    });
+});
+
+// Typing indicator received
+socket.on("typing_comment", (data) => {
+    const allPostWrappers = document.querySelectorAll(".post-wrapper");
+
+    allPostWrappers.forEach(postWrapper => {
+        const hiddenInput = postWrapper.querySelector("input[name='postId']");
+        if (!hiddenInput || hiddenInput.value !== data.postId) return;
+
+        let typingEl = postWrapper.querySelector(".typing-indicator");
+        if (!typingEl) {
+            typingEl = document.createElement("p");
+            typingEl.className = "typing-indicator";
+            // ✅ insertAdjacentElement 
+            const commentForm = postWrapper.querySelector(".create-comment-form");
+            commentForm.insertAdjacentElement("beforebegin", typingEl);
+        }else{
+            typingEl.style.display="block"
+        }
+
+        typingEl.textContent = "Someone is typing...";
+
+        const commentContainer = postWrapper.querySelector(".all-comments-container");
+        if (window.getComputedStyle(commentContainer).display !== "none") {
+            commentContainer.scrollTop = commentContainer.scrollHeight;
+        }
+
+        clearTimeout(typingEl._timeout);
+        typingEl._timeout = setTimeout(() => {
+            typingEl.textContent = "";
+            typingEl.style.display = "none";
+        }, 2000);
+    });
+});

@@ -91,6 +91,9 @@ io.on("connection", (socket) => {
     socket.to(data.chatId).emit("user_typing", data);
   });
 
+  socket.on("typing_comment", (data) => {
+    socket.broadcast.emit("typing_comment", data);
+  });
   socket.on("disconnect", () => {
     
   });
