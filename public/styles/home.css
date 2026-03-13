@@ -311,7 +311,7 @@ li{
 }
 /* comment content */
 .comment-content {
-    background-color: #f0f2f5;
+    background-color: #f0f2f8;
     padding: 12px 14px;
     border-radius: 18px;
     display: flex;
@@ -360,6 +360,11 @@ li{
     padding-right: 4px;
     display: block;
 }
+
+.comment-container .options {
+    display: none;
+}
+
 
 .comment-container:hover .options {
     display: flex;

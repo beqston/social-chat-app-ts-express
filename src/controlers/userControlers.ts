@@ -1036,6 +1036,16 @@ export const editComment = async (req: Request, res: Response) => {
       return res.status(404).json({ message: "Comment not found!" });
     }
 
+    // Emit the update to everyone
+    const io = req.app.get("io");
+    
+    // sent data to frontend
+    io.emit("comment_updated", {
+      commentId,
+      newText: text,
+      postId:updatedComment.post
+    })
+
     return res.status(200).json({ 
       message: "Comment edited successfully!!",
       comment: updatedComment
@@ -1048,11 +1058,29 @@ export const editComment = async (req: Request, res: Response) => {
 };
 
 export const deleteComment = async (req: Request, res: Response) =>{
-  const {comentId} = req.params;
-  console.log(comentId)
+  const {commentId} = req.params;
+  
   try {
-    res.status(200).json({message:"comment deleted!!"})
+    const comment = await Comment.findByIdAndDelete(commentId);
+
+    if(!comment){
+      return res.status(404).json({
+        message:"Comment not found!!"
+      })
+    }
+
+    // initialize socket.io
+    const io = req.app.get("io");
+
+    // send to frontend
+    io.emit("comment_deleted", {
+      commentId,
+      postId: comment.post
+    })
+
+    res.status(200).json({message:"comment deleted!!"});
+
   } catch (error) {
-    res.status(500).json({message:"Intervalserver error!!"})
+    res.status(500).json({message:"Interval server error!!"})
   }
 }

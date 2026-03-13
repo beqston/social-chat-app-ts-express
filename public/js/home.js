@@ -81,8 +81,9 @@ async function getAllPosts() {
 
                 <div class="all-comments-container">
                     <div class="comments-close-container">
-                        <ul class="comments-list">
-                            ${comments.map(c => `
+                        <ul class="comments-list" id="comments-list-${post._id}">
+                            ${comments.map(c =>
+                                 `
                                 <li class="comment-container">
                                     <div>
                                         ${c.user.image
@@ -90,17 +91,22 @@ async function getAllPosts() {
                                             : `<div class="profile-image">${c.user.username[0].toUpperCase()}</div>`
                                         }
                                     </div>
+
+
                                     <div class="username-comment">
                                         <a href="/user/${c.user._id}">${c.user.username}</a>
                                         <div class="comment-wrapper">
-                                            <p class="comment-content">${c.text}</p>
-                                            <div class="comment-edit-delete-cnt">
+                                            <p class="comment-content" add id="comment-text-${c._id}">${c.text}</p>
+                                        ${
+                                            c.user._id ==userId? `                                            <div class="comment-edit-delete-cnt">
                                                 <button class="options">...</button>
                                                 <div class="edit-delete-wrapper">
                                                     <button class="edit">Edit</button>
                                                     <button class="delete">Delete</button>
                                                 </div>
-                                            </div>
+                                            </div>`:""
+                                        }
+
                                         </div>
                                     </div>
                                 </li>
@@ -218,14 +224,10 @@ async function getAllPosts() {
                     deleteButton.addEventListener("click", async (e) => {
                         e.preventDefault();
 
-                        // 1. Ask for confirmation before deleting
-                        const confirmDelete = confirm("Are you sure you want to delete this comment?");
-                        if (!confirmDelete) return; // Stop if they click "Cancel"
-
                         try {
                             // 2. Send the delete request to the backend
                             const res = await fetch("/delete-comment/" + comment._id, {
-                                method: "DELETE", // Use DELETE method for removals
+                                method: "DELETE", 
                                 credentials: "include"
                             });
 
@@ -375,8 +377,9 @@ socket.on("new_comment", (data) => {
         if (!hiddenInput || hiddenInput.value !== data.postId) return;
 
         const ul = postWrapper.querySelector(".comments-list");
+        const isAuthor = data.comment.user._id === currentUserId;
         const newCommentHTML = `
-            <li class="comment-container">
+            <li class="comment-container" id="comment-container-${data.comment._id}">
                 <div>
                     ${data.comment.user.image
                         ? `<img class="profile-image" src="${data.comment.user.image}" alt="${data.comment.user.username}" />`
@@ -387,13 +390,18 @@ socket.on("new_comment", (data) => {
                     <a href="/user/${data.comment.user._id}">${data.comment.user.username}</a>
                     <div class="comment-wrapper">
                         <p class="comment-content">${data.comment.text}</p>
-                        <div class="comment-edit-delete-cnt">
-                            <button class="options">...</button>
-                            <div>
-                                <button class="edit">Edit</button>
-                                <button class="delete">Delete</button>
-                            </div>
-                        </div>
+                        ${
+                            isAuthor? `
+                                <div class="comment-edit-delete-cnt">
+                                    <button class="options">...</button>
+                                    <div>
+                                        <button class="edit">Edit</button>
+                                        <button class="delete">Delete</button>
+                                    </div>
+                                </div>
+                            `:""
+                        }
+
                     </div>
                 </div>
             </li>`;
@@ -438,4 +446,43 @@ socket.on("typing_comment", (data) => {
             typingEl.style.display = "none";
         }, 2000);
     });
+});
+
+// Listen for an EDIT from another user
+socket.on("comment_updated", (data) => {
+    const { commentId, newText, postId } = data;
+    
+    // Find the specific post container first
+    const postUl = document.getElementById(`comments-list-${postId}`);
+    if (!postUl) return;
+
+    // Find the specific comment text element within that post
+    const commentTextEl = document.getElementById(`comment-text-${commentId}`);
+    if (commentTextEl) {
+        commentTextEl.textContent = newText;
+        
+        // Brief highlight effect to show it changed
+        commentTextEl.style.transition = "background 0.5s";
+        commentTextEl.style.backgroundColor = "#fff9c4";
+        setTimeout(() => commentTextEl.style.backgroundColor = "#f0f2f8", 1000);
+    }
+});
+
+// Listen for a DELETE from another user
+socket.on("comment_deleted", (data) => {
+    const { commentId, postId } = data; // Now we use both
+    
+    // 1. Remove the comment
+    const commentContainer = document.getElementById(`comment-container-${commentId}`);
+    if (commentContainer) {
+        commentContainer.style.opacity = "0";
+        setTimeout(() => commentContainer.remove(), 300);
+    }
+
+    // 2. Optional: Update a comment counter if you have one
+    const countEl = document.getElementById(`comment-count-${postId}`);
+    if (countEl) {
+        let count = parseInt(countEl.textContent);
+        countEl.textContent = count - 1;
+    }
 });
