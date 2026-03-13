@@ -395,3 +395,7 @@ li{
 .comment-edit-delete-cnt div .delete{
     top: 28px;
 }
+/* comment count */
+.comment-count{
+    color: blue;
+}

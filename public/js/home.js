@@ -8,6 +8,9 @@ const previewImg = document.getElementById("show-image-previw");
 const previewWrapper = document.getElementById("preview-wrapper");
 const removeBtn = document.getElementById("remove-img-btn");
 
+// current user id
+let currentUserId;
+
 imageInput.addEventListener("change", (e) => {
     const file = e.target.files[0];
     if (file) {
@@ -43,6 +46,7 @@ async function getAllPosts() {
 
         const resMe = await fetch("/api/v1/me");
         const userId = await resMe.json();
+        currentUserId=userId;
 
         const posts = await res.json();
         postContainer.innerHTML = '';
@@ -75,8 +79,19 @@ async function getAllPosts() {
                 </div>
 
                 <div class="like-comment-wrapper">
-                    <img class="like-btn" src=${isLiked ? '/images/home/isLike.png' : '/images/home/like.png'} alt="Like">
-                    <img class="comment-btn" src="/images/home/comment.png" alt="Comment">
+                    <div class="stat-item">
+                        <img class="like-btn" src=${isLiked ? '/images/home/isLike.png' : '/images/home/like.png'} alt="Like"/>
+                        <span id="like-count-${post._id}">
+                            ${post.likes.length}
+                        </span>
+                    </div>
+                    
+                    <div class="stat-item">
+                        <img class="comment-btn" src="/images/home/comment.png" alt="Comment">
+                        <span id="comment-count-${post._id}">
+                            ${comments.length}
+                        </span>
+                    </div>
                 </div>
 
                 <div class="all-comments-container">
@@ -251,7 +266,7 @@ async function getAllPosts() {
 
 
 
-            // Like button
+            // Like button, like unlike logic
             const likeButton = postWrapper.querySelector('.like-comment-wrapper .like-btn');
             likeButton.addEventListener("click", async () => {
                 const img = postWrapper.querySelector(".like-comment-wrapper .like-btn");
@@ -265,9 +280,20 @@ async function getAllPosts() {
                     if (res.status == 201) {
                         img.src = '/images/home/isLike.png';
                         showMessage("Post liked successfully", "green");
+                        const countEl = document.getElementById(`like-count-${post._id}`);
+                        if(countEl){
+                            let count = parseInt(countEl.textContent);
+                            countEl.textContent = count + 1;
+                        }
                     } else {
                         img.src = '/images/home/like.png';
                         showMessage("Post unliked successfully", "green");
+
+                        const countEl = document.getElementById(`like-count-${post._id}`);
+                        if(countEl){
+                            let count = parseInt(countEl.textContent);
+                            countEl.textContent = count - 1;
+                        }
                     }
                 } catch (error) {
                     showMessage(`${error.message}`, "red");
@@ -407,6 +433,14 @@ socket.on("new_comment", (data) => {
             </li>`;
         ul.insertAdjacentHTML("beforeend", newCommentHTML);
 
+        // Update a comment counter 
+        const countEl = document.getElementById(`comment-count-${data.postId}`);
+
+        if (countEl) {
+            let count = parseInt(countEl.textContent);
+            countEl.textContent = count + 1;
+        }
+
         const commentContainer = postWrapper.querySelector(".all-comments-container");
         if (window.getComputedStyle(commentContainer).display !== "none") {
             commentContainer.scrollTop = commentContainer.scrollHeight;
@@ -479,8 +513,9 @@ socket.on("comment_deleted", (data) => {
         setTimeout(() => commentContainer.remove(), 300);
     }
 
-    // 2. Optional: Update a comment counter if you have one
+    //  Update a comment counter 
     const countEl = document.getElementById(`comment-count-${postId}`);
+
     if (countEl) {
         let count = parseInt(countEl.textContent);
         countEl.textContent = count - 1;
