@@ -35,6 +35,28 @@
 
         <section id="posts-container"></section>
 
+        <section id="edit-post">
+            <form id="post-edit-cnt">
+                <textarea name="text" id="newText" placeholder="What's on your mind?"></textarea>
+
+                <div id="preview-edit-wrapper" style="display: none;">
+                    <img id="show-edit-image-previw" src="" alt="Selected Image">
+                    <div id="remove-edit-img-btn">&times;</div>
+                </div>
+                
+                <div id="post-edit-actions">
+                    <div id="upload-edit-cnt">
+                        <label for="image">
+                            <img src="/images/home/upload.png" alt="Upload Image">
+                            <span>Add Photo</span>
+                        </label>
+                        <input type="file" name="image" id="newImage" accept="image/*" />
+                    </div>
+                    <button type="submit" id="post-edit-btn">Post</button>
+                </div>
+            </form>
+        </section>
+
         <div id="message-container" style="position: fixed; top: 20px; right: 20px; z-index: 1000;">
             <p id="status-message" style="display: none; padding: 10px; border-radius: 5px; color: white; font-weight: bold;"></p>
         </div>

@@ -7,6 +7,7 @@ const imageInput = document.getElementById("image");
 const previewImg = document.getElementById("show-image-previw");
 const previewWrapper = document.getElementById("preview-wrapper");
 const removeBtn = document.getElementById("remove-img-btn");
+const editPost = document.getElementById("edit-post");
 
 // current user id
 let currentUserId;
@@ -59,6 +60,7 @@ async function getAllPosts() {
 
             const postWrapper = document.createElement("div");
             postWrapper.className = "post-wrapper";
+            const isAuthor = post.user._id == userId
 
             postWrapper.innerHTML = `
                 <div class="post-head-container">
@@ -69,6 +71,18 @@ async function getAllPosts() {
                         }
                         <p>${post.user.username}</p>
                     </a>
+                    
+                    ${
+                        isAuthor? `
+                            <div class="post-edit-delete-wrapper" id="post-edit-delete-wrapper-${post._id}">
+                                <button class="options">...</button>
+                                <div class="post-edit-delete">
+                                    <button class="edit">Edit</button>
+                                    <button class="delete">Delete</button>
+                                </div>
+                            </div>
+                        `:""
+                    }
                 </div>
 
                 <div class="post-user">
@@ -140,6 +154,162 @@ async function getAllPosts() {
 
             postContainer.appendChild(postWrapper);
 
+            // <<----->>>>
+
+            if(isAuthor){
+                
+                const postOptions = postWrapper.querySelector(`#post-edit-delete-wrapper-${post._id} .options`)
+                const postEditDeleteWrapper = postWrapper.querySelector(`#post-edit-delete-wrapper-${post._id} .post-edit-delete`)
+                const postEdit = postWrapper.querySelector(`#post-edit-delete-wrapper-${post._id} .edit`)
+                const postDelete = postWrapper.querySelector(`#post-edit-delete-wrapper-${post._id} .delete`)
+                const submitEditPost = document.getElementById("post-edit-btn");
+                
+                postOptions.addEventListener("click", ()=>{
+                    postEditDeleteWrapper.style.display="flex"
+                });
+
+
+                postDelete.addEventListener("click", async(e)=>{
+                    e.preventDefault();
+                    try {
+                        const res = await fetch(`/post-delete/${post._id}`, {
+                            method:"DELETE",
+                            credentials:"include"
+                        });
+                        if(!res.ok) throw new Error("Post does not deleted!");
+                        postWrapper.remove();
+                        showMessage("Post deleted successfully", "green");
+                    } catch (error) {
+                        showMessage("Post does not deleted!", "#ff4444");
+                    }
+                })
+
+                postEdit.addEventListener("click", ()=>{
+                    editPost.style.display="block";
+                    postEditDeleteWrapper.style.didplay="none"
+                })
+                
+
+                submitEditPost.addEventListener("click", async(e)=>{
+                    e.preventDefault();
+
+                    try {
+
+                        const res = await fetch(`/post-edit/${post._id}`, {
+                            method:"PATCH",
+                            credentials:"include"
+                        });
+
+                        showMessage("Post edited successfully", "green");
+                        
+                    } catch (error) {
+                        showMessage("Post does not edited!", "#ff4444");
+                    }
+                })
+            }
+
+            // <-------------->>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+
+            // Like button, like unlike logic
+            const likeButton = postWrapper.querySelector('.like-comment-wrapper .like-btn');
+            likeButton.addEventListener("click", async () => {
+                const img = postWrapper.querySelector(".like-comment-wrapper .like-btn");
+                try {
+                    const res = await fetch("/like-post/" + post._id, {
+                        method: "POST",
+                        credentials: "include"
+                    });
+                    if (!res.ok) throw new Error("Something Wrong!!");
+
+                    if (res.status == 201) {
+                        img.src = '/images/home/isLike.png';
+                        showMessage("Post liked successfully", "green");
+                        const countEl = document.getElementById(`like-count-${post._id}`);
+                        if(countEl){
+                            let count = parseInt(countEl.textContent);
+                            countEl.textContent = count + 1;
+                        }
+                    } else {
+                        img.src = '/images/home/like.png';
+                        showMessage("Post unliked successfully", "green");
+
+                        const countEl = document.getElementById(`like-count-${post._id}`);
+                        if(countEl){
+                            let count = parseInt(countEl.textContent);
+                            countEl.textContent = count - 1;
+                        }
+                    }
+                } catch (error) {
+                    showMessage(`${error.message}`, "red");
+                }
+            });
+
+
+            // Textarea — keydown + typing emit
+            const textarea = postWrapper.querySelector("textarea");
+
+            textarea.addEventListener("keydown", (event) => {
+                if (event.key === "Enter" && !event.shiftKey) {
+                    event.preventDefault();
+                    commentForm.requestSubmit();
+                }
+            });
+
+            // typing emit
+            textarea.addEventListener("input", () => {
+                socket.emit("typing_comment", {
+                    postId: post._id
+                });
+            });
+
+            // Comment form submit
+            const commentForm = postWrapper.querySelector(".create-comment-form");
+            commentForm.addEventListener("submit", async (event) => {
+                event.preventDefault();
+                const formData = new FormData(commentForm);
+                const data = Object.fromEntries(formData);
+
+                if (!data.text.trim()) {
+                    showMessage("Please enter a comment!", "#ff4444");
+                    return;
+                }
+
+                try {
+                    const res = await fetch("/add-comment", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify(data),
+                        credentials: "include",
+                    });
+
+                    if (!res.ok) throw new Error("Failed to add comment");
+
+                    commentForm.reset();
+                    showMessage("Comment added successfully", "green");
+
+                } catch (err) {
+                    showMessage(err.message, "red");
+                }
+            });
+
+            // Comment container
+            const commentMainContainer = postWrapper.querySelector(".all-comments-container");
+
+            // Open comments
+            const openCommentWindow = postWrapper.querySelector(".comment-btn");
+            openCommentWindow.addEventListener("click", () => {
+                commentMainContainer.style.display = "flex";
+                commentMainContainer.scrollTop = commentMainContainer.scrollHeight;
+            });
+
+            // Close comments
+            const closeCommentWindow = postWrapper.querySelector(".close-comment-window");
+            closeCommentWindow.addEventListener("click", () => {
+                commentMainContainer.style.display = "none";
+            });
+
+
+            // <<---COMMENTS--->>
 
             // 1. Grab all rendered comment containers inside this post
             const commentContainers = postWrapper.querySelectorAll(".comment-container");
@@ -262,106 +432,6 @@ async function getAllPosts() {
                     });
                 }
                 
-            });
-
-
-
-            // Like button, like unlike logic
-            const likeButton = postWrapper.querySelector('.like-comment-wrapper .like-btn');
-            likeButton.addEventListener("click", async () => {
-                const img = postWrapper.querySelector(".like-comment-wrapper .like-btn");
-                try {
-                    const res = await fetch("/like-post/" + post._id, {
-                        method: "POST",
-                        credentials: "include"
-                    });
-                    if (!res.ok) throw new Error("Something Wrong!!");
-
-                    if (res.status == 201) {
-                        img.src = '/images/home/isLike.png';
-                        showMessage("Post liked successfully", "green");
-                        const countEl = document.getElementById(`like-count-${post._id}`);
-                        if(countEl){
-                            let count = parseInt(countEl.textContent);
-                            countEl.textContent = count + 1;
-                        }
-                    } else {
-                        img.src = '/images/home/like.png';
-                        showMessage("Post unliked successfully", "green");
-
-                        const countEl = document.getElementById(`like-count-${post._id}`);
-                        if(countEl){
-                            let count = parseInt(countEl.textContent);
-                            countEl.textContent = count - 1;
-                        }
-                    }
-                } catch (error) {
-                    showMessage(`${error.message}`, "red");
-                }
-            });
-
-
-            // Textarea — keydown + typing emit
-            const textarea = postWrapper.querySelector("textarea");
-
-            textarea.addEventListener("keydown", (event) => {
-                if (event.key === "Enter" && !event.shiftKey) {
-                    event.preventDefault();
-                    commentForm.requestSubmit();
-                }
-            });
-
-            // typing emit
-            textarea.addEventListener("input", () => {
-                socket.emit("typing_comment", {
-                    postId: post._id
-                });
-            });
-
-            // Comment form submit
-            const commentForm = postWrapper.querySelector(".create-comment-form");
-            commentForm.addEventListener("submit", async (event) => {
-                event.preventDefault();
-                const formData = new FormData(commentForm);
-                const data = Object.fromEntries(formData);
-
-                if (!data.text.trim()) {
-                    showMessage("Please enter a comment!", "#ff4444");
-                    return;
-                }
-
-                try {
-                    const res = await fetch("/add-comment", {
-                        method: "POST",
-                        headers: { "Content-Type": "application/json" },
-                        body: JSON.stringify(data),
-                        credentials: "include",
-                    });
-
-                    if (!res.ok) throw new Error("Failed to add comment");
-
-                    commentForm.reset();
-                    showMessage("Comment added successfully", "green");
-
-                } catch (err) {
-                    showMessage(err.message, "red");
-                }
-            });
-
-            // Comment container
-            const commentMainContainer = postWrapper.querySelector(".all-comments-container");
-
-            // Open comments
-            const openCommentWindow = postWrapper.querySelector(".comment-btn");
-            openCommentWindow.addEventListener("click", () => {
-                commentMainContainer.style.display = "flex";
-                commentMainContainer.scrollTop = commentMainContainer.scrollHeight;
-            });
-
-            // Close comments
-            const closeCommentWindow = postWrapper.querySelector(".close-comment-window");
-            closeCommentWindow.addEventListener("click", () => {
-                commentMainContainer.style.display = "none";
             });
         }
     } catch (error) {

@@ -1078,9 +1078,63 @@ export const deleteComment = async (req: Request, res: Response) =>{
       postId: comment.post
     })
 
-    res.status(200).json({message:"comment deleted!!"});
+    res.status(200).json({message:"Comment deleted!!"});
 
   } catch (error) {
     res.status(500).json({message:"Interval server error!!"})
   }
 }
+
+export const deletePost = async (req: Request, res: Response) => {
+  const { postId } = req.params;
+
+  try {
+    const post = await Post.findById(postId); // ← just find first, don't delete yet
+
+    if (!post) {
+      return res.status(404).json({
+        message: "Post not found!!"
+      });
+    }
+
+    await Comment.deleteMany({ post: postId });
+
+    await Post.findByIdAndDelete(postId);
+
+    if (post.image) {
+      const imagePath = path.join(__dirname, "../../", post.image);
+      if (fs.existsSync(imagePath)) {
+        try {
+          fs.unlinkSync(imagePath);
+        } catch (err) {
+          console.error("Failed to delete old image:", err);
+        }
+      }
+    }
+
+    res.status(200).json({ message: "Post deleted!!" });
+
+  } catch (error) {
+    res.status(500).json({ message: "Internal server error!!" });
+  }
+};
+
+export const editPost = async (req: Request, res: Response) => {
+  const { postId } = req.params;
+
+  try {
+    const post = await Post.findById(postId); 
+
+    if (!post) {
+      return res.status(404).json({
+        message: "Post not found!!"
+      });
+    }
+
+
+    res.status(200).json({ message: "Post edited!!" });
+
+  } catch (error) {
+    res.status(500).json({ message: "Internal server error!!" });
+  }
+};

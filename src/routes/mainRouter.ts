@@ -3,7 +3,7 @@ import path from "path";
 import User from "../model/user.ts";
 import isAuthUser, { tokenExpires } from "../middleware/auth.ts";
 import userValidation, { passwordRules } from "../utils/userValidation.ts";
-import { getChats, getLogin, getMe, getMessage, getUsers, logout, postMessage, postLogin, postUser, createChat, getAllPMMessage, getMessagesCount, deleteMessage, updateMessage, deleteChat, markAsSeen, updateUserPassword, deleteUserProfile, postForgotPassword, postResetPassword, postProfileImage, deleteProfileImage, postSearchUser, createNewPost, getAllPosts, postComment, getPostComments, getOtherUserProfile, getMyProfile, postLike, editComment, deleteComment } from "../controlers/userControlers.ts";
+import { getChats, getLogin, getMe, getMessage, getUsers, logout, postMessage, postLogin, postUser, createChat, getAllPMMessage, getMessagesCount, deleteMessage, updateMessage, deleteChat, markAsSeen, updateUserPassword, deleteUserProfile, postForgotPassword, postResetPassword, postProfileImage, deleteProfileImage, postSearchUser, createNewPost, getAllPosts, postComment, getPostComments, getOtherUserProfile, getMyProfile, postLike, editComment, deleteComment, deletePost, editPost } from "../controlers/userControlers.ts";
 import jwt from "jsonwebtoken"
 import isActive from "../middleware/isActive.ts";
 import uploadSingleImage from "../utils/multer";
@@ -180,6 +180,12 @@ router.post("/add-user", userValidation, postUser);
 
 // create new post
 router.post("/add-post", ...uploadSingleImage(path.join(__dirname, "../../uploads/posts"), "image", 500), createNewPost);
+
+// post edit
+router.patch("/post-edit/:postId",  editPost);
+
+// delete post route
+router.delete("/post-delete/:postId",  deletePost);
 
 // create new comment
 router.post("/add-comment", postComment);
