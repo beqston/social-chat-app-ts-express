@@ -206,3 +206,14 @@ a{
     text-align: center;
     color: white;
 }
+
+#close-edit{
+    position: absolute;
+    right: 2rem;
+    top: 1rem;
+    cursor: pointer;
+}
+
+.edit:hover, .delete:hover{
+    background-color: #1c1e21;
+}

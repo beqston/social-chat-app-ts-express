@@ -432,4 +432,6 @@ li{
     width: 3rem;
 }
 
-
+.comment-container .edit:hover, .comment-container .delete:hover{
+    background-color: #1877f2;
+}

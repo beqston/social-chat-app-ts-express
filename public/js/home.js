@@ -7,7 +7,7 @@ const imageInput = document.getElementById("image");
 const previewImg = document.getElementById("show-image-previw");
 const previewWrapper = document.getElementById("preview-wrapper");
 const removeBtn = document.getElementById("remove-img-btn");
-const editPost = document.getElementById("edit-post");
+const editPostMainContainer = document.getElementById("edit-post");
 
 // current user id
 let currentUserId;
@@ -157,29 +157,15 @@ async function getAllPosts() {
             // <<----->>>>
 
             if(isAuthor){
-                
                 const postOptions = postWrapper.querySelector(`#post-edit-delete-wrapper-${post._id} .options`)
                 const postEditDeleteWrapper = postWrapper.querySelector(`#post-edit-delete-wrapper-${post._id} .post-edit-delete`)
-                const postEdit = postWrapper.querySelector(`#post-edit-delete-wrapper-${post._id} .edit`)
+                const postEditButton = postWrapper.querySelector(`#post-edit-delete-wrapper-${post._id} .edit`)
                 const postDelete = postWrapper.querySelector(`#post-edit-delete-wrapper-${post._id} .delete`)
                 const submitEditPost = document.getElementById("post-edit-btn");
                 const deleteWindowContainer = document.getElementById("delete-window-wrapper");
                 const deletePost = document.querySelector("#post-delete-wrapper .delete");
                 const closeDeleteWindow = document.querySelector("#post-delete-wrapper .close");
-                
-                postOptions.addEventListener("click", ()=>{
-                    postEditDeleteWrapper.style.display="flex"
-                });
-
-                postDelete.addEventListener("click", ()=>{
-                    deleteWindowContainer.style.display="grid";
-                    postEditDeleteWrapper.style.display ="none"
-                    
-                });
-
-                closeDeleteWindow.addEventListener("click", ()=>{
-                    deleteWindowContainer.style.display="none";
-                })
+                const closePostEdit = document.getElementById("close-edit");
 
 
                 deletePost.addEventListener("click", async(e)=>{
@@ -197,16 +183,10 @@ async function getAllPosts() {
                         showMessage("Post does not deleted!", "#ff4444");
                     }
                 })
-
-                postEdit.addEventListener("click", ()=>{
-                    editPost.style.display="block";
-                    postEditDeleteWrapper.style.didplay="none"
-                })
                 
 
                 submitEditPost.addEventListener("click", async(e)=>{
                     e.preventDefault();
-
                     try {
 
                         await fetch(`/post-edit/${post._id}`, {
@@ -220,7 +200,37 @@ async function getAllPosts() {
                         showMessage("Post does not edited!", "#ff4444");
                     }
                 })
+
+                window.addEventListener("click", (e)=>{
+                    if(window.getComputedStyle(postEditDeleteWrapper).display !== "none" && e.target.contains(postEditDeleteWrapper) ){
+                        postEditDeleteWrapper.style.display ="none"
+                    }
+                })
+                
+                postOptions.addEventListener("click", ()=>{
+                    postEditDeleteWrapper.style.display="flex"
+                });
+
+                postDelete.addEventListener("click", ()=>{
+                    deleteWindowContainer.style.display="grid";
+                    postEditDeleteWrapper.style.display ="none"
+                    
+                });
+
+                closeDeleteWindow.addEventListener("click", ()=>{
+                    deleteWindowContainer.style.display="none";
+                })
+                postEditButton.addEventListener("click", ()=>{
+                    editPostMainContainer.style.display="block";
+                    postEditDeleteWrapper.style.display ="none"
+                });
+
+                closePostEdit.addEventListener("click", ()=>{
+                    editPostMainContainer.style.display ="none";
+                })
             }
+
+    
 
             // <-------------->>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
@@ -504,7 +514,7 @@ socket.on("new_comment", (data) => {
                             isAuthor? `
                                 <div class="comment-edit-delete-cnt">
                                     <button class="options">...</button>
-                                    <div>
+                                    <div class="edit-delete-wrapper">
                                         <button class="edit">Edit</button>
                                         <button class="delete">Delete</button>
                                     </div>
@@ -516,6 +526,92 @@ socket.on("new_comment", (data) => {
                 </div>
             </li>`;
         ul.insertAdjacentHTML("beforeend", newCommentHTML);
+
+        if (isAuthor) {
+            const newComment = document.getElementById(`comment-container-${data.comment._id}`);
+            const optionsBtn = newComment.querySelector(".options");
+            const editDeleteDiv = newComment.querySelector(".edit-delete-wrapper");;
+            const editBtn = newComment.querySelector(".edit");
+            const deleteBtn = newComment.querySelector(".delete");
+            const commentContentEl = newComment.querySelector(".comment-content");
+
+            editDeleteDiv.addEventListener("mouseleave", () => {
+                editDeleteDiv.style.display = "none";
+                optionsBtn.style.display = "block";
+            });
+
+            optionsBtn.addEventListener("click", (e) => {
+                e.stopPropagation();
+                const isVisible = editDeleteDiv.style.display === "block";
+                editDeleteDiv.style.display = isVisible ? "none" : "block";
+            });
+
+            // Edit logic
+            editBtn.addEventListener("click", () => {
+                editDeleteDiv.style.display = "none";
+
+                const originalText = commentContentEl.textContent;
+                commentContentEl.innerHTML = `
+                    <div class="edit-input-wrapper">
+                        <input type="text" class="edit-input" value="${originalText}" style="width: 100%; margin-bottom: 5px;" />
+                        <button class="save-edit-btn" style="background: green; cursor: pointer; color: white; padding: 2px 5px;">Save</button>
+                        <button class="cancel-edit-btn" style="background: gray; cursor: pointer; color: white; padding: 2px 5px;">Cancel</button>
+                    </div>
+                `;
+
+                const inputEl = commentContentEl.querySelector(".edit-input");
+                const saveBtn = commentContentEl.querySelector(".save-edit-btn");
+                const cancelBtn = commentContentEl.querySelector(".cancel-edit-btn");
+
+                cancelBtn.addEventListener("click", () => {
+                    commentContentEl.textContent = originalText;
+                });
+
+                saveBtn.addEventListener("click", async () => {
+                    const newText = inputEl.value.trim();
+                    if (!newText || newText === originalText) {
+                        commentContentEl.textContent = originalText;
+                        return;
+                    }
+                    try {
+                        const res = await fetch("/edit-comment/" + data.comment._id, {
+                            method: "PUT",
+                            headers: { "Content-Type": "application/json" },
+                            credentials: "include",
+                            body: JSON.stringify({ text: newText })
+                        });
+                        if (!res.ok) throw new Error("Failed to edit comment");
+                        commentContentEl.textContent = newText;
+                        showMessage("Comment edited successfully", "green");
+                    } catch (error) {
+                        showMessage(error.message, "red");
+                        commentContentEl.textContent = originalText;
+                    }
+                });
+            });
+
+            // Delete logic
+            deleteBtn.addEventListener("click", async () => {
+                try {
+                    const res = await fetch("/delete-comment/" + data.comment._id, {
+                        method: "DELETE",
+                        credentials: "include"
+                    });
+                    if (!res.ok) throw new Error("Failed to delete comment");
+                    newComment.remove();
+                    showMessage("Comment deleted successfully", "green");
+
+                    const countEl = document.getElementById(`comment-count-${data.postId}`);
+                    if (countEl) {
+                        let count = parseInt(countEl.textContent);
+                        countEl.textContent = count - 1;
+                    }
+                } catch (error) {
+                    showMessage(error.message, "red");
+                }
+            });
+        }
+
 
         // Update a comment counter 
         const countEl = document.getElementById(`comment-count-${data.postId}`);
