@@ -127,7 +127,7 @@ async function getAllPosts() {
                                         <div class="comment-wrapper">
                                             <p class="comment-content" add id="comment-text-${c._id}">${c.text}</p>
                                         ${
-                                            c.user._id ==userId? `                                            <div class="comment-edit-delete-cnt">
+                                            c.user._id ==userId? `<div class="comment-edit-delete-cnt">
                                                 <button class="options">...</button>
                                                 <div class="edit-delete-wrapper">
                                                     <button class="edit">Edit</button>
@@ -163,13 +163,26 @@ async function getAllPosts() {
                 const postEdit = postWrapper.querySelector(`#post-edit-delete-wrapper-${post._id} .edit`)
                 const postDelete = postWrapper.querySelector(`#post-edit-delete-wrapper-${post._id} .delete`)
                 const submitEditPost = document.getElementById("post-edit-btn");
+                const deleteWindowContainer = document.getElementById("delete-window-wrapper");
+                const deletePost = document.querySelector("#post-delete-wrapper .delete");
+                const closeDeleteWindow = document.querySelector("#post-delete-wrapper .close");
                 
                 postOptions.addEventListener("click", ()=>{
                     postEditDeleteWrapper.style.display="flex"
                 });
 
+                postDelete.addEventListener("click", ()=>{
+                    deleteWindowContainer.style.display="grid";
+                    postEditDeleteWrapper.style.display ="none"
+                    
+                });
 
-                postDelete.addEventListener("click", async(e)=>{
+                closeDeleteWindow.addEventListener("click", ()=>{
+                    deleteWindowContainer.style.display="none";
+                })
+
+
+                deletePost.addEventListener("click", async(e)=>{
                     e.preventDefault();
                     try {
                         const res = await fetch(`/post-delete/${post._id}`, {
@@ -177,6 +190,7 @@ async function getAllPosts() {
                             credentials:"include"
                         });
                         if(!res.ok) throw new Error("Post does not deleted!");
+                        deleteWindowContainer.style.display="none";
                         postWrapper.remove();
                         showMessage("Post deleted successfully", "green");
                     } catch (error) {
@@ -195,7 +209,7 @@ async function getAllPosts() {
 
                     try {
 
-                        const res = await fetch(`/post-edit/${post._id}`, {
+                        await fetch(`/post-edit/${post._id}`, {
                             method:"PATCH",
                             credentials:"include"
                         });

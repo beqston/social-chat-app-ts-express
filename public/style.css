@@ -159,3 +159,50 @@ a{
     margin: auto;
     padding-top: 1rem;
 }
+
+/* post delete window yes or no container*/
+#delete-window-wrapper{
+    width: 100%;
+    height: 200px;
+    z-index: 200;
+    height: 100vh;
+    backdrop-filter: blur(10px);
+    position: fixed;
+    background-color: rgba(232, 222, 222, 0.493);
+    place-items: center;
+    display: none;
+}
+/* alert window */
+#delete-post-alert{
+    width: 48%;
+    height: 100px;
+    background-color: white;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    row-gap: 1rem;
+}
+#delete-post-alert p{
+    font-size: 1.4rem;
+}
+
+/* yes or no wrapper */
+#post-delete-wrapper{
+    width: 40%;
+    display: flex;
+    justify-content: center;
+    column-gap: 2rem;
+}
+
+/* yes and no buttons style */
+#post-delete-wrapper button{
+    all: unset;
+    width: 4rem;
+    padding: 8px;
+    background-color: #4e4f4d;
+    border-radius: 10px;
+    cursor: pointer;
+    text-align: center;
+    color: white;
+}
