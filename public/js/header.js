@@ -133,7 +133,7 @@ document.addEventListener('DOMContentLoaded', () => {
                                 ${user.active?"<div class='onsite'></div>":"<div class='ofline'></div>"}
                                 <p>${user.lastActiveAgo}</p>
                             </div>
-                            <a href="/chat/${user._id}">Send Message</a>
+                            <a href="/chat/${user._id}"><img src="/images/header/message.png" alt="Message" /></a>
                         </div>
                     </div>
                 `).join("");
@@ -148,3 +148,4 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
 });
+

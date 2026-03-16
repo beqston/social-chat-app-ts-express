@@ -42,22 +42,18 @@ async function initSocket() {
         const userId = userData._id || userData;
         currentUserID = userId;
         
-        // Connect socket with userId
         socket = io({
             auth: {
                 userId: userId
             }
         });
         
-        // JOIN THE ROOM
         if (chat_id) {
             socket.emit("join_chat", chat_id);
         }
         
-        // Set up socket listeners
         setupSocketListeners();
         
-        // Mark messages as seen on load
         if (chat_id) {
             markMessagesAsSeen();
         }
@@ -68,7 +64,6 @@ async function initSocket() {
 }
 
 function setupSocketListeners() {
-    // LISTEN FOR REAL-TIME MESSAGES
     socket.on("receive_message", (newMessage) => {
         const msgChatId = newMessage.chat._id || newMessage.chat;
         
@@ -79,7 +74,6 @@ function setupSocketListeners() {
         }
     });
 
-    // TYPING INDICATOR
     socket.on("user_typing", (data) => {
         if (data.chatId === chat_id) {
             if (data.isTyping) {
@@ -92,7 +86,7 @@ function setupSocketListeners() {
         }
     });
 
-    socket.on("message_updated", (updatedMessage) => {
+    socket.on("message_updated", () => {
         getPMMessages();
     });
 
@@ -102,35 +96,31 @@ function setupSocketListeners() {
         }
     });
 
-// REAL-TIME READ RECEIPTS - Update instantly without page refresh
-socket.on("messages_seen", (data) => {
-    if (data.chatId === chat_id || String(data.chatId) === String(chat_id)) {
-        const messageBubbles = allMessagesPM.querySelectorAll('.message-own');
-        
-        messageBubbles.forEach((bubble) => {
+    socket.on("messages_seen", (data) => {
+        if (data.chatId === chat_id || String(data.chatId) === String(chat_id)) {
+            const messageBubbles = allMessagesPM.querySelectorAll('.message-own');
             
-            const indicator = bubble.querySelector('.seen-indicator');
-            
-            if (indicator) {
-                if (indicator.classList.contains('sent')) {
+            messageBubbles.forEach((bubble) => {
+                const indicator = bubble.querySelector('.seen-indicator');
+                
+                if (indicator && indicator.classList.contains('sent')) {
                     indicator.classList.remove('sent');
                     indicator.classList.add('read');
                     indicator.textContent = '✓✓';
-                } 
-            } 
-        });
-        
-        lastMessagesState = "";
-        getPMMessages();
-    } 
-});
+                }
+            });
+            
+            lastMessagesState = "";
+            getPMMessages();
+        } 
+    });
 
     socket.on("update_count", () => {
         getPMMessages();
     });
 }
 
-// Also mark as seen when window gets focus
+// Mark as seen when window gets focus
 window.addEventListener('focus', () => {
     if (chat_id) {
         markMessagesAsSeen();
@@ -187,12 +177,16 @@ async function getPMMessages() {
         lastChatsState = currentChatsState;
         lastMessagesState = currentMessagesState;
 
-        //  Render Sidebar (Chat List)
+        // Render Sidebar (Chat List)
         messagesCNT.innerHTML = ''; 
         chats.forEach((chat) => {
             const otherUserId = chat.participants.find(u => u !== currentUserID);
             const findUser = users.find(u => u._id === otherUserId);
-            const username = findUser ? findUser.username : "Unknown";
+
+            // ✅ Guard: skip if user not found
+            if (!findUser) return;
+
+            const username = findUser.username;
             const lastMessageSender = users.find((user) => user._id == chat?.lastMessage?.sender);
             
             const chatUrl = `/message/${chat._id}`;
@@ -200,15 +194,21 @@ async function getPMMessages() {
             
             if (isActive) {
                 chatWithUser = username;
+
+                // update activeTime for the currently open chat
+                const ago = parseInt(findUser.lastActiveAgo);
+                activeTime.textContent = ago < 1
+                    ? chatWithUser +" - " + "Active now"
+                    : chatWithUser +" - "+ `Last seen ${findUser.lastActiveAgo}`;
             }
 
             const userDiv = document.createElement('div');
             userDiv.className = `see-message-cnt ${isActive ? "active-chat" : ""}`;
-            activeTime.textContent=findUser.lastActiveAgo;
+
             userDiv.innerHTML = `
                 <a href="${chatUrl}">
                     ${findUser.image 
-                        ? `<img class="profile-image" src="${findUser.image}" id="avatar-preview" class="profile-img">` 
+                        ? `<img class="profile-image profile-img" src="${findUser.image}" id="avatar-preview">` 
                         : `<div class="profile-image">${username[0].toUpperCase()}</div>`
                     }
                     <div>
@@ -267,26 +267,27 @@ async function getPMMessages() {
             messagesCNT.appendChild(userDiv);
         });
 
-        //  Render Main Messages (Conversation)
+        // Render Main Messages (Conversation)
         allMessagesPM.innerHTML = ''; 
         
         const currentChat = chats.find(c => c._id === chat_id);
-        const otherParticipantId = currentChat ? currentChat.participants.find(p => p !== currentUserID) : null;
+        const otherParticipantId = currentChat
+            ? currentChat.participants.find(p => p !== currentUserID)
+            : null;
 
         messages.forEach((msg) => {
             const msgDiv = document.createElement('div');
-            
             const senderId = msg.sender?._id || msg.sender;
             
             msgDiv.className = senderId === currentUserID ? 'message-own' : 'message-other'; 
             msgDiv.classList.add("message-buble");
             
             const isRead = senderId === currentUserID && 
-            msg.readBy && 
-            msg.readBy.some(read => {
-                const readUserId = read.user?._id || read.user;
-                return readUserId && readUserId.toString() === otherParticipantId?.toString();
-            });
+                msg.readBy && 
+                msg.readBy.some(read => {
+                    const readUserId = read.user?._id || read.user;
+                    return readUserId && readUserId.toString() === otherParticipantId?.toString();
+                });
             
             msgDiv.innerHTML = `
                 <p>${msg.text}</p>
