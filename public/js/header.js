@@ -146,6 +146,16 @@ document.addEventListener('DOMContentLoaded', () => {
             if (query) {
                 fetchUsers(query);
             }
+
+            // get menu toglle element
+            const menuToggle = document.getElementById('menu-toggle');
+            const section2Container = document.getElementById('section2-cnt');
+
+            if (menuToggle && section2Container) {
+                menuToggle.addEventListener("click", () => {
+                    const isFlexStyle = window.getComputedStyle(section2Container).display === "flex";
+                    section2Container.style.display = isFlexStyle ? "none" : "flex";
+                });
+            }
         });
 });
-

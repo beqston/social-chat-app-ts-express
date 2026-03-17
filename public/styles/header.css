@@ -90,3 +90,29 @@ a{
     opacity: 0;
   }
 }
+
+/* media query */
+
+@media screen and (max-width:768px) {
+  header div:nth-child(2) {
+    margin-left: 8vw;
+    width: 90vw;
+  }
+  #section2-cnt{
+    padding: 1rem;
+    position: absolute;
+    left: 2px;
+    width: 40vw;
+    height: 100dvh;
+    background-color: #9abde3f9;
+    z-index: 200;
+    display: none;
+    flex-direction: column-reverse;
+    justify-content: flex-end;
+    row-gap: 2rem;
+    top: 40px;
+  }
+  #menu-toggle{
+    display: block;
+  }
+}

@@ -186,7 +186,8 @@
 
 /* post image */
 .post-wrapper img{
-    max-width: 700px;
+    max-width: 90%;
+    width: fit-content;
     object-fit: contain;
 }
 
@@ -434,4 +435,27 @@ li{
 
 .comment-container .edit:hover, .comment-container .delete:hover{
     background-color: #1877f2;
+}
+
+
+/* media query */
+@media screen and (max-width:768px) {
+    #create-post-wrapper {
+        width: 90%;
+    }
+    #post-cnt {
+        border-radius: 4px;
+        padding: 10px;
+        height: 120px;
+    }
+    #text {
+        max-height: 70px;
+    }
+    .post-wrapper{
+        width: 90%;
+    }
+    #post-actions {
+        padding-top: 0px;
+        transform: translateY(-3rem);
+    }
 }
