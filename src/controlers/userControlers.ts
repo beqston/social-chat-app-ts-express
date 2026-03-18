@@ -116,73 +116,73 @@ export const getLogin = (req: Request, res: Response) => {
   res.sendFile(path.join(__dirname, '../pages/login.html'));
 }
 
-export const getChats = async(req:Request, res:Response)=>{
-    try {
-      const decoded = jwt.verify(req.cookies.token, process.env.JWT_SECRET!) as { id: string };
-      const userID = new mongoose.Types.ObjectId(decoded.id)
+export const getChats = async (req: Request, res: Response) => {
+  try {
+    const decoded = jwt.verify(req.cookies.token, process.env.JWT_SECRET!) as { id: string };
+    const userID = new mongoose.Types.ObjectId(decoded.id);
 
-      // 1. get all chats
-      const chats = await Chat.aggregate([
-        { $match: { 
+    const chats = await Chat.aggregate([
+      {
+        $match: {
           participants: userID,
           deletedBy: { $nin: [userID] }
-        }},
-        {
-         $lookup: {
-            from:"messages",
-            let: { chatId: "$_id" },
-            pipeline:[
-              {
-                $match:{
-                  $expr:{
-                    $and:[
-                      {$eq: ["$chat", "$$chatId"] },
-                      {$ne:["$sender", userID]},
-                      {$not: {$in:[userID, "$readBy.user"]}}
-                    ]
-                  }
+        }
+      },
+
+      // Unread messages count
+      {
+        $lookup: {
+          from: "messages",
+          let: { chatId: "$_id" },
+          pipeline: [
+            {
+              $match: {
+                $expr: {
+                  $and: [
+                    { $eq: ["$chat", "$$chatId"] },
+                    { $ne: ["$sender", new mongoose.Types.ObjectId(userID)] }, // ← fix
+                    { $not: { $in: [new mongoose.Types.ObjectId(userID), "$readBy.user"] } } // ← fix
+                  ]
                 }
               }
-            ],
-            as: "unreadMessages"
-          }
-        },
-        {
-          $lookup: {
-            from: "messages", 
-            localField: "lastMessage",
-            foreignField: "_id",
-            as: "lastMessage"
-          }
-        },
-        {
-          $unwind: {
-            path: "$lastMessage",
-            preserveNullAndEmptyArrays: true 
-          }
-        },
+            }
+          ],
+          as: "unreadMessages"
+        }
+      },
 
-        {
-          $addFields: {
-            unreadCount: { $size: "$unreadMessages" }
-          }
-        },
-        { $project: { unreadMessages: 0 } },
+      // Populate lastMessage
+      {
+        $lookup: {
+          from: "messages",
+          localField: "lastMessage",
+          foreignField: "_id",
+          as: "lastMessage"
+        }
+      },
+      {
+        $unwind: {
+          path: "$lastMessage",
+          preserveNullAndEmptyArrays: true
+        }
+      },
 
-        { $sort: { updatedAt: -1 } }
-      ])
-      
-      res.json({
-        data:chats
-      });
+      {
+        $addFields: {
+          unreadCount: { $size: "$unreadMessages" }
+        }
+      },
+      { $project: { unreadMessages: 0 } },
+      { $sort: { updatedAt: -1 } }
+    ]);
 
-    } catch (error) {
-        res.status(500).json({
-            status:'fail',
-            message:error
-        })
-    }
-}
+    res.json({ data: chats });
+
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ status: "fail", message: error });
+  }
+};
 
 export const getUsers =  async(req:Request, res:Response)=>{
   const decoded = jwt.verify(req.cookies.token, process.env.JWT_SECRET!) as { id: string };
@@ -270,42 +270,31 @@ export const postMessage = async (req: Request, res: Response) => {
     const decoded = jwt.verify(token, process.env.JWT_SECRET!) as { id: string };
     const userID = new mongoose.Types.ObjectId(decoded.id);
 
-    // 1. Find the chat and get participants
-    let chat = await Chat.findById(chatId);
+    const chat = await Chat.findById(chatId);
     if (!chat) return res.status(404).json({ message: "Chat Not Found!" });
 
-    // 2. Create the message
     const newMessage = await Message.create({
       chat: chat._id,
       sender: userID,
       text: req.body.message
     });
 
-    // 3. Update the Chat Metadata
     await Chat.findByIdAndUpdate(
       chatId,
       {
-        $set: { 
-          deletedBy: [], 
-          lastMessage: newMessage._id,
-          updatedAt: new Date()
+        $set: {
+          deletedBy: [],
+          lastMessage: newMessage._id  
         }
       },
       { new: true }
     );
 
-    // --- SOCKET.IO LOGIC ---
     const io = req.app.get("io");
-
-    // A. Update the Chat Window (for people currently looking at the messages)
     io.to(chatId).emit("receive_message", newMessage);
 
-    // B. Update the Header Count (for the recipient)
-    // Find the participant who is NOT the sender
     const recipientId = chat.participants.find(p => p.toString() !== userID.toString());
-
-    if (recipientId && io) {
-      // Emit to the RECIPIENT'S ID, not the message ID
+    if (recipientId) {
       io.to(recipientId.toString()).emit("update_count");
     }
 
@@ -315,7 +304,7 @@ export const postMessage = async (req: Request, res: Response) => {
     console.error(error);
     res.status(500).json({ message: "Error creating message" });
   }
-}
+};
 
 export const getAllPMMessage = async(req: Request, res: Response) => {
   try {

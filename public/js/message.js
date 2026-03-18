@@ -20,10 +20,27 @@ const activeTime = document.getElementById("active-time");
 const pathParts = window.location.pathname.split("/");
 const chat_id = pathParts[2];
 
+// ✅ Highlight active chat using inline style — bypasses all CSS specificity issues
+function highlightActiveChat() {
+    const activePath = window.location.pathname;
+    document.querySelectorAll(".see-message-cnt a").forEach(link => {
+        const parent = link.closest(".see-message-cnt");
+        if (link.getAttribute("href") === activePath) {
+            parent.style.backgroundColor = "rgba(112, 157, 241, 0.3)";
+        } else {
+            parent.style.backgroundColor = "";
+        }
+    });
+}
+
+// ✅ MutationObserver — re-applies highlight after every sidebar re-render automatically
+const observer = new MutationObserver(() => {
+    highlightActiveChat();
+});
+
 // MARK MESSAGES AS SEEN when user views the chat
 async function markMessagesAsSeen() {
     if (!chat_id) return;
-    
     try {
         await fetch(`/api/v1/message/seen/${chat_id}`, {
             method: 'POST',
@@ -41,23 +58,19 @@ async function initSocket() {
         const userData = await resUser.json();
         const userId = userData._id || userData;
         currentUserID = userId;
-        
-        socket = io({
-            auth: {
-                userId: userId
-            }
-        });
-        
+
+        socket = io({ auth: { userId } });
+
         if (chat_id) {
             socket.emit("join_chat", chat_id);
         }
-        
+
         setupSocketListeners();
-        
+
         if (chat_id) {
             markMessagesAsSeen();
         }
-        
+
     } catch (error) {
         console.error("Failed to initialize socket:", error);
     }
@@ -66,7 +79,6 @@ async function initSocket() {
 function setupSocketListeners() {
     socket.on("receive_message", (newMessage) => {
         const msgChatId = newMessage.chat._id || newMessage.chat;
-        
         if (msgChatId === chat_id) {
             lastMessagesState = "";
             getPMMessages();
@@ -87,35 +99,35 @@ function setupSocketListeners() {
     });
 
     socket.on("message_updated", () => {
+        lastMessagesState = "";
         getPMMessages();
     });
 
     socket.on("message_deleted", (data) => {
         if (data.chatId === chat_id) {
-            getPMMessages(); 
+            lastMessagesState = "";
+            getPMMessages();
         }
     });
 
     socket.on("messages_seen", (data) => {
         if (data.chatId === chat_id || String(data.chatId) === String(chat_id)) {
             const messageBubbles = allMessagesPM.querySelectorAll('.message-own');
-            
             messageBubbles.forEach((bubble) => {
                 const indicator = bubble.querySelector('.seen-indicator');
-                
                 if (indicator && indicator.classList.contains('sent')) {
                     indicator.classList.remove('sent');
                     indicator.classList.add('read');
                     indicator.textContent = '✓✓';
                 }
             });
-            
             lastMessagesState = "";
             getPMMessages();
-        } 
+        }
     });
 
     socket.on("update_count", () => {
+        lastChatsState = "";
         getPMMessages();
     });
 }
@@ -131,19 +143,12 @@ window.addEventListener('focus', () => {
 messageInput.addEventListener("input", () => {
     if (!chat_id || !socket) return;
 
-    socket.emit("typing", {
-        chatId: chat_id,
-        isTyping: true
-    });
+    socket.emit("typing", { chatId: chat_id, isTyping: true });
 
     clearTimeout(typingTimeout);
-
     typingTimeout = setTimeout(() => {
         if (socket) {
-            socket.emit("typing", {
-                chatId: chat_id,
-                isTyping: false
-            });
+            socket.emit("typing", { chatId: chat_id, isTyping: false });
         }
     }, 2000);
 });
@@ -171,51 +176,49 @@ async function getPMMessages() {
         const currentMessagesState = JSON.stringify(messages);
 
         if (currentChatsState === lastChatsState && currentMessagesState === lastMessagesState) {
-            return; 
+            return;
         }
 
         lastChatsState = currentChatsState;
         lastMessagesState = currentMessagesState;
 
-        // Render Sidebar (Chat List)
-        messagesCNT.innerHTML = ''; 
-        chats.forEach((chat) => {
-            const otherUserId = chat.participants.find(u => u !== currentUserID);
-            const findUser = users.find(u => u._id === otherUserId);
+        // ── Render Sidebar ──────────────────────────────────────────
+        messagesCNT.innerHTML = '';
 
-            // ✅ Guard: skip if user not found
+        chats.forEach((chat) => {
+            const otherUserId = chat.participants.find(u => u.toString() !== currentUserID.toString());
+            const findUser = users.find(u => u._id.toString() === otherUserId?.toString());
             if (!findUser) return;
 
             const username = findUser.username;
-            const lastMessageSender = users.find((user) => user._id == chat?.lastMessage?.sender);
-            
-            const chatUrl = `/message/${chat._id}`;
-            const isActive = window.location.pathname === chatUrl;
-            
-            if (isActive) {
-                chatWithUser = username;
+            const lastMessageSender = users.find((user) =>
+                user._id.toString() === chat?.lastMessage?.sender?.toString()
+            );
 
-                // update activeTime for the currently open chat
+            const chatUrl = `/message/${chat._id}`;
+
+            if (chat._id.toString() === chat_id) {
+                chatWithUser = username;
                 const ago = parseInt(findUser.lastActiveAgo);
                 activeTime.textContent = ago < 1
-                    ? chatWithUser +" - " + "Active now"
-                    : chatWithUser +" - "+ `Last seen ${findUser.lastActiveAgo}`;
+                    ? chatWithUser + " - Active now"
+                    : chatWithUser + " - Last seen " + findUser.lastActiveAgo;
             }
 
             const userDiv = document.createElement('div');
-            userDiv.className = `see-message-cnt ${isActive ? "active-chat" : ""}`;
+            userDiv.className = 'see-message-cnt';
 
             userDiv.innerHTML = `
                 <a href="${chatUrl}">
-                    ${findUser.image 
-                        ? `<img class="profile-image profile-img" src="${findUser.image}" id="avatar-preview">` 
+                    ${findUser.image
+                        ? `<img class="profile-image profile-img" src="${findUser.image}">`
                         : `<div class="profile-image">${username[0].toUpperCase()}</div>`
                     }
                     <div>
                         <h2>${username}</h2>
-                        ${lastMessageSender ? `
+                        ${chat.lastMessage?.text ? `
                             <div class="last-message-cnt">
-                                <p class="last-message-profile">${lastMessageSender.username[0]}</p>
+                                <p class="last-message-profile">${lastMessageSender ? lastMessageSender.username[0] : "?"}</p>
                                 <p class="last-message">${chat.lastMessage.text}</p>
                             </div>` : ""
                         }
@@ -228,7 +231,7 @@ async function getPMMessages() {
                     </div>
                 </div>
             `;
-            
+
             const dialogDiv = userDiv.querySelector(".message-options");
             dialogDiv.addEventListener("click", (e) => {
                 e.preventDefault();
@@ -244,21 +247,16 @@ async function getPMMessages() {
             deleteChatBTN.addEventListener("click", async (e) => {
                 e.preventDefault();
                 e.stopPropagation();
-
                 try {
                     const chatID = removeInputValue.value;
                     const res = await fetch(`/chat/${chatID}`, { method: "DELETE" });
-
                     if (!res.ok) throw new Error("Chat Not Found");
-                    
                     userDiv.remove();
-                    
                     if (chatID === chat_id) {
                         window.location.href = "/messages";
                     } else {
                         getPMMessages();
                     }
-                    
                 } catch (error) {
                     console.log(error);
                 }
@@ -267,9 +265,9 @@ async function getPMMessages() {
             messagesCNT.appendChild(userDiv);
         });
 
-        // Render Main Messages (Conversation)
-        allMessagesPM.innerHTML = ''; 
-        
+        // ── Render Messages ─────────────────────────────────────────
+        allMessagesPM.innerHTML = '';
+
         const currentChat = chats.find(c => c._id === chat_id);
         const otherParticipantId = currentChat
             ? currentChat.participants.find(p => p !== currentUserID)
@@ -278,17 +276,17 @@ async function getPMMessages() {
         messages.forEach((msg) => {
             const msgDiv = document.createElement('div');
             const senderId = msg.sender?._id || msg.sender;
-            
-            msgDiv.className = senderId === currentUserID ? 'message-own' : 'message-other'; 
+
+            msgDiv.className = senderId === currentUserID ? 'message-own' : 'message-other';
             msgDiv.classList.add("message-buble");
-            
-            const isRead = senderId === currentUserID && 
-                msg.readBy && 
+
+            const isRead = senderId === currentUserID &&
+                msg.readBy &&
                 msg.readBy.some(read => {
                     const readUserId = read.user?._id || read.user;
                     return readUserId && readUserId.toString() === otherParticipantId?.toString();
                 });
-            
+
             msgDiv.innerHTML = `
                 <p>${msg.text}</p>
                 ${senderId === currentUserID ? `
@@ -298,8 +296,8 @@ async function getPMMessages() {
                         </span>
                     </div>
                     <div class="edit-delete-wrpapper">
-                       <button class="edit-btn">Edit</button>
-                       <button class="delete-btn">Delete</button>
+                        <button class="edit-btn">Edit</button>
+                        <button class="delete-btn">Delete</button>
                     </div>` : ""
                 }
             `;
@@ -309,7 +307,7 @@ async function getPMMessages() {
                 deleteBtn.onclick = async () => {
                     await fetch("/message/" + msg._id, { method: "DELETE" });
                     lastMessagesState = "";
-                    getPMMessages(); 
+                    getPMMessages();
                 };
             }
 
@@ -322,7 +320,7 @@ async function getPMMessages() {
                     messageInput.focus();
                 };
             }
-            
+
             allMessagesPM.appendChild(msgDiv);
         });
 
@@ -337,7 +335,7 @@ async function getPMMessages() {
 sendMessageForm.addEventListener("submit", async (e) => {
     e.preventDefault();
     const text = messageInput.value;
-    const messageID = editIdInput.value; 
+    const messageID = editIdInput.value;
 
     if (!text.trim()) return;
 
@@ -346,25 +344,25 @@ sendMessageForm.addEventListener("submit", async (e) => {
         const method = messageID ? "PATCH" : "POST";
 
         const response = await fetch(url, {
-            method: method,
+            method,
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ message: text })
         });
 
         if (response.ok) {
             messageInput.value = "";
-            editIdInput.value = ""; 
+            editIdInput.value = "";
             sendBtn.textContent = "Send Message";
-            
-            lastMessagesState = "";
-            getPMMessages();
         }
+        
     } catch (err) {
         console.error("Operation failed:", err);
     }
 });
 
 // Initialize socket first, then load messages
+observer.observe(messagesCNT, { childList: true, subtree: true });
+
 initSocket().then(() => {
     getPMMessages();
 });

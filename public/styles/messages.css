@@ -232,9 +232,8 @@
 .disable{
     background-color: red;
 }
-.active-chat{
-     background-color: rgba(112, 157, 241, 0.3);
-}
+
+
 #active-time{
     width: fit-content;
     position: absolute;

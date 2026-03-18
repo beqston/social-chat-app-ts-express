@@ -34,10 +34,10 @@ async function getMessages() {
         messagesCNT.innerHTML = ''; 
         chats.forEach((chat) => {
             
-            const otherUserId = chat.participants.find(user => user !== userID);
+            const otherUserId = chat.participants.find(user => user.toString() !== userID.toString());
             const findUser = users.find(u => u._id === otherUserId);
             const username = findUser ? findUser.username : "Unknown";
-            const lastMessageSender = users.find((user) => user._id == chat?.lastMessage?.sender);
+            const lastMessageSender = users.find((user) => user._id.toString() === chat?.lastMessage?.sender?.toString());
 
             const userDiv = document.createElement('div');
             userDiv.className = 'see-message-cnt';
@@ -53,12 +53,13 @@ async function getMessages() {
                             <h2>${username}</h2>
                             <div class="${findUser.active?"active":"disable"}"></div>
                         </div>
-                        ${lastMessageSender ? `
+                        ${chat.lastMessage?.text ? `
                             <div class="last-message-cnt">
-                                <p class="last-message-profile">${lastMessageSender.username[0]}</p>
+                                <p class="last-message-profile">${lastMessageSender ? lastMessageSender.username[0] : "?"}</p>
                                 <p class="last-message">${chat.lastMessage.text}</p>
                             </div>` : ""
                         }
+   
                     </div>
                     ${chat.unreadCount > 0 ? `<span class="unread-message">${chat.unreadCount}</span>` : ""}
                 </a>
