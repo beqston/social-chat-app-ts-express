@@ -157,5 +157,12 @@ document.addEventListener('DOMContentLoaded', () => {
                     section2Container.style.display = isFlexStyle ? "none" : "flex";
                 });
             }
+
+            // if click window outside menu toggle, close toglle menu
+            window.addEventListener("click", (event)=>{
+                if(!event.target.contains(section2Container) && !event.target.contains(menuToggle)){
+                    section2Container.style.display ="none"
+                }
+            })
         });
 });

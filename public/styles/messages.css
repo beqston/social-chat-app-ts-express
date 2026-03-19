@@ -235,14 +235,22 @@
 
 
 #active-time{
-    width: fit-content;
+    width: 100%;
     position: absolute;
     z-index: 10;
-    right: 50%;
     text-align: center;
     font-weight: 400;
     font-size: 18px;
     color: rgb(73, 7, 239);
+}
+
+/* for back messages in mobile scren */
+#back-mobile{
+    display: none;
+    position: absolute;
+    z-index: 10;
+    top: 8px;
+    left: 1rem;
 }
 @keyframes newMessage {
   0% {
@@ -266,4 +274,32 @@
     #messages-cnt{
     grid-template-columns: 4fr 7fr;
 }
+}
+
+/* media quey */
+@media screen and (max-width:768px){
+    #message-aside{
+        display: none;
+    }
+    #messages-cnt{
+        grid-template-columns: 1fr;
+        overflow-x: hidden;
+    }
+    #messages-aside{
+        overflow-y: scroll;
+    }
+ 
+    #pm-messages{
+        width: 100%;
+        min-height:92lvh;
+        position: relative;
+
+    }
+
+    #back-mobile{
+        display: inline-block;
+    }
+    #empty-msg{
+        display: none;
+    }
 }

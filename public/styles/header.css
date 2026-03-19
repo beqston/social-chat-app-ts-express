@@ -102,7 +102,7 @@ a{
     padding: 1rem;
     position: absolute;
     left: 2px;
-    width: 40vw;
+    width: 80vw;
     height: 100dvh;
     background-color: #9abde3f9;
     z-index: 200;
@@ -110,7 +110,11 @@ a{
     flex-direction: column-reverse;
     justify-content: flex-end;
     row-gap: 2rem;
-    top: 40px;
+    top: 48px;
+  }
+  #section2-cnt a{
+    color: white;
+    padding: 8px;
   }
   #menu-toggle{
     display: block;
