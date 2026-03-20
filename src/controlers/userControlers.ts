@@ -1003,93 +1003,121 @@ export const postLike = async (req: Request, res: Response) => {
   }
 };
 
-export const editComment = async (req: Request, res: Response) => {
-  const { commentId } = req.params; 
-  const { text } = req.body;
 
-  // 1. Don't allow empty comments
+export const editComment = async (req: Request, res: Response) => {
+  const { commentId } = req.params;
+  const { text } = req.body;
+  const token = req.cookies.token;
+  if (!token) return res.status(401).json({ message: "Unauthorized" });
+
   if (!text || text.trim() === "") {
     return res.status(400).json({ message: "Comment text cannot be empty!" });
   }
 
   try {
-    // 2. Update the document
-    const updatedComment = await Comment.findByIdAndUpdate(
-      commentId, 
-      { text }, 
-      { new: true } 
-    );
+    const decoded = jwt.verify(token, process.env.JWT_SECRET!) as { id: string };
+    const userId = new mongoose.Types.ObjectId(decoded.id);
 
-    // 3. Check if the comment actually existed
-    if (!updatedComment) {
+    // ✅ await added
+    const comment = await Comment.findById(commentId);
+
+    if (!comment) {
       return res.status(404).json({ message: "Comment not found!" });
     }
 
-    // Emit the update to everyone
-    const io = req.app.get("io");
-    
-    // sent data to frontend
-    io.emit("comment_updated", {
-      commentId,
-      newText: text,
-      postId:updatedComment.post
-    })
-
-    return res.status(200).json({ 
-      message: "Comment edited successfully!!",
-      comment: updatedComment
-    });
-
-  } catch (error) {
-    console.error("Error editing comment:", error); // Helpful for your terminal
-    return res.status(500).json({ message: "Internal server error!!" });
-  }
-};
-
-export const deleteComment = async (req: Request, res: Response) =>{
-  const {commentId} = req.params;
-  
-  try {
-    const comment = await Comment.findByIdAndDelete(commentId);
-
-    if(!comment){
-      return res.status(404).json({
-        message:"Comment not found!!"
-      })
+    // ✅ Author check
+    if (comment.user.toString() !== userId.toString()) {
+      return res.status(403).json({ message: "You are not authorized to edit this comment" });
     }
+
+    comment.text = text;
+    await comment.save();
+
 
     // initialize socket.io
     const io = req.app.get("io");
+    io.emit("comment_updated", {
+      commentId,
+      newText: text,
+      postId: comment.post
+    });
 
-    // send to frontend
+    return res.status(200).json({
+      message: "Comment edited successfully!",
+      comment
+    });
+
+  } catch (error) {
+    console.error("Error editing comment:", error);
+    return res.status(500).json({ message: "Internal server error!" });
+  }
+};
+
+export const deleteComment = async (req: Request, res: Response) => {
+  const { commentId } = req.params;
+  const token = req.cookies.token;
+  if (!token) return res.status(401).json({ message: "Unauthorized" });
+
+  try {
+    const decoded = jwt.verify(token, process.env.JWT_SECRET!) as { id: string };
+    const userId = new mongoose.Types.ObjectId(decoded.id);
+
+    // ✅ Find first, don't delete yet
+    const comment = await Comment.findById(commentId);
+
+    if (!comment) {
+      return res.status(404).json({ message: "Comment not found!" });
+    }
+
+    // ✅ Author check
+    if (comment.user.toString() !== userId.toString()) {
+      return res.status(403).json({ message: "You are not authorized to delete this comment" });
+    }
+
+    await comment.deleteOne();
+
+    const io = req.app.get("io");
     io.emit("comment_deleted", {
       commentId,
       postId: comment.post
-    })
+    });
 
-    res.status(200).json({message:"Comment deleted!!"});
+    res.status(200).json({ message: "Comment deleted!" });
 
   } catch (error) {
-    res.status(500).json({message:"Interval server error!!"})
+    res.status(500).json({ message: "Internal server error!" });
   }
-}
+};
 
 export const deletePost = async (req: Request, res: Response) => {
   const { postId } = req.params;
+  const token = req.cookies.token;
+  if (!token) return res.status(401).json({ message: "Unauthorized" });
 
   try {
-    const post = await Post.findById(postId); // ← just find first, don't delete yet
+    // decoded user id
+    const decoded = jwt.verify(token, process.env.JWT_SECRET!) as { id: string };
+    const userID = new mongoose.Types.ObjectId(decoded.id);
 
+    const post = await Post.findById(postId);
+
+    // check if post not exist
     if (!post) {
-      return res.status(404).json({
-        message: "Post not found!!"
-      });
+      return res.status(404).json({ message: "Post not found!" });
     }
 
+    // ✅ Check if requester is the author
+    if (post.user.toString() !== userID.toString()) {
+      return res.status(403).json({ message: "You are not authorized to delete this post" });
+    }
+
+    // find all post's comment and delete comments
     await Comment.deleteMany({ post: postId });
 
+    // find post and delete
     await Post.findByIdAndDelete(postId);
 
+    // delete old image
     if (post.image) {
       const imagePath = path.join(__dirname, "../../", post.image);
       if (fs.existsSync(imagePath)) {
@@ -1101,27 +1129,42 @@ export const deletePost = async (req: Request, res: Response) => {
       }
     }
 
-    res.status(200).json({ message: "Post deleted!!" });
+    res.status(200).json({ message: "Post deleted!" });
 
   } catch (error) {
-    res.status(500).json({ message: "Internal server error!!" });
+    res.status(500).json({ message: "Internal server error!" });
   }
 };
 
 export const editPost = async (req: Request, res: Response) => {
   const { postId } = req.params;
+  const {text}= req.body;
+  const token = req.cookies.token;
+
+  // check if is token
+  if (!token) return res.status(401).json({ message: "Unauthorized" });
 
   try {
-    const post = await Post.findById(postId); 
+    // decoded user id
+    const decoded = jwt.verify(token, process.env.JWT_SECRET!) as { id: string };
+    const userID = new mongoose.Types.ObjectId(decoded.id);
 
+    const post = await Post.findById(postId);
+
+    // chek if post not exist
     if (!post) {
-      return res.status(404).json({
-        message: "Post not found!!"
-      });
+      return res.status(404).json({ message: "Post not found!" });
     }
 
+    // ✅ Check if requester is the author
+    if (post.user.toString() !== userID.toString()) {
+      return res.status(403).json({ message: "You are not authorized to delete this post" });
+    }
 
-    res.status(200).json({ message: "Post edited!!" });
+    post.text = text;
+    await post.save()
+
+    res.status(200).json({ message: "Post edited!", data: post });
 
   } catch (error) {
     res.status(500).json({ message: "Internal server error!!" });
