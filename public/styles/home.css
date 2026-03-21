@@ -254,6 +254,7 @@ li{
     border-radius: 10px;
     resize: none;
 }
+
 /* send button */
 .create-comment-form button{
     all: unset;
@@ -311,9 +312,11 @@ li{
     display: flex;
     flex-direction: column;
 }
+
 .comment-container .profile-image{
     transform: translateY(12px);
 }
+
 /* comment content */
 .comment-content {
     background-color: #f0f2f8;
@@ -414,6 +417,7 @@ li{
     padding: 4px;
     cursor: pointer;
 }
+
 .post-edit-delete-wrapper .options{
     transform: translateY(-10px);
     font-size: 2rem;
@@ -426,6 +430,7 @@ li{
     z-index: 200;
     display: none;
 }
+
 .post-edit-delete button{
     background-color: #089fdc;
     border-bottom: 1px solid black;
@@ -443,17 +448,21 @@ li{
     #create-post-wrapper {
         width: 90%;
     }
+
     #post-cnt {
         border-radius: 4px;
         padding: 10px;
         height: 120px;
     }
+
     #text {
         max-height: 70px;
     }
+
     .post-wrapper{
         width: 90%;
     }
+
     #post-actions {
         padding-top: 0px;
         transform: translateY(-3rem);

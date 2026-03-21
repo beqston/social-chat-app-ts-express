@@ -873,6 +873,7 @@ export const createNewPost = async (req: Request, res: Response) => {
   }
 };
 
+
 export const getAllPosts = async (req: Request, res: Response) => {
   try {
     // find all post and sort, new post is first
@@ -889,6 +890,24 @@ export const getAllPosts = async (req: Request, res: Response) => {
     res.status(500).json({ message: "Internal server error!!" });
   }
 };
+
+export const getPost = async (req: Request, res: Response) =>{
+  const {id} = req.params
+  try {
+    const post = await Post.findById(id);
+
+    if(!post){
+      return res.status(404).json({
+        message:"Post not found!!"
+      })
+    }
+
+    res.status(200).json({post})
+    
+  } catch (error) {
+    res.status(500).json("Interval server error!!")
+  }
+}
 
 export const postComment = async (req: Request, res: Response) => {
   const { text, postId } = req.body;
@@ -1139,6 +1158,7 @@ export const deletePost = async (req: Request, res: Response) => {
 export const editPost = async (req: Request, res: Response) => {
   const { postId } = req.params;
   const {text}= req.body;
+  const file = req.file;
   const token = req.cookies.token;
 
   // check if is token
@@ -1161,8 +1181,29 @@ export const editPost = async (req: Request, res: Response) => {
       return res.status(403).json({ message: "You are not authorized to delete this post" });
     }
 
-    post.text = text;
-    await post.save()
+     // ✅ Update fields, single save
+    if (text){
+      post.text = text;
+    } 
+    if (file){
+
+      if(post.image){
+        // Reconstruct the full path to the old file
+        const oldImagePath = path.join(__dirname, '../../', post.image);
+
+        if (fs.existsSync(oldImagePath)) {
+          try {
+            fs.unlinkSync(oldImagePath);
+          } catch (err) {
+            console.error("Failed to delete old image:", err);
+          }
+        }
+      }
+
+      post.image = file ? `/uploads/posts/${file.filename}` : undefined
+    }
+
+    await post.save();
 
     res.status(200).json({ message: "Post edited!", data: post });
 

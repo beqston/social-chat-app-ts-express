@@ -3,7 +3,7 @@ import path from "path";
 import User from "../model/user.ts";
 import isAuthUser, { tokenExpires } from "../middleware/auth.ts";
 import userValidation, { passwordRules } from "../utils/userValidation.ts";
-import { getChats, getLogin, getMe, getMessage, getUsers, logout, postMessage, postLogin, postUser, createChat, getAllPMMessage, getMessagesCount, deleteMessage, updateMessage, deleteChat, markAsSeen, updateUserPassword, deleteUserProfile, postForgotPassword, postResetPassword, postProfileImage, deleteProfileImage, postSearchUser, createNewPost, getAllPosts, postComment, getPostComments, getOtherUserProfile, getMyProfile, postLike, editComment, deleteComment, deletePost, editPost } from "../controlers/userControlers.ts";
+import { getChats, getLogin, getMe, getMessage, getUsers, logout, postMessage, postLogin, postUser, createChat, getAllPMMessage, getMessagesCount, deleteMessage, updateMessage, deleteChat, markAsSeen, updateUserPassword, deleteUserProfile, postForgotPassword, postResetPassword, postProfileImage, deleteProfileImage, postSearchUser, createNewPost, getAllPosts, postComment, getPostComments, getOtherUserProfile, getMyProfile, postLike, editComment, deleteComment, deletePost, editPost, getPost } from "../controlers/userControlers.ts";
 import jwt from "jsonwebtoken"
 import isActive from "../middleware/isActive.ts";
 import uploadSingleImage from "../utils/multer";
@@ -171,8 +171,11 @@ router.get('/reset-password/:token', (req: Request, res: Response) => {
 // POST route too
 router.post('/reset-password/:token', passwordRules, postResetPassword);
 
-router.get('/message/:id', getMessage)
+router.get('/message/:id', getMessage);
+
+// ligin user route
 router.route('/login').get(getLogin).post(postLogin);
+// login out user
 router.post('/login-out', logout);
 
 // create new user
@@ -182,7 +185,7 @@ router.post("/add-user", userValidation, postUser);
 router.post("/add-post", ...uploadSingleImage(path.join(__dirname, "../../uploads/posts"), "image", 500), createNewPost);
 
 // post edit
-router.patch("/post-edit/:postId",  editPost);
+router.patch("/post-edit/:postId",...uploadSingleImage(path.join(__dirname, "../../uploads/posts"), "image", 500),  editPost);
 
 // delete post route
 router.delete("/post-delete/:postId",  deletePost);
@@ -219,8 +222,14 @@ router.get('/api/v1/user/:id', getOtherUserProfile);
 
 // chat api
 router.get('/api/v1/chats', getChats);
-// post api
+
+
+// post api, get all post
 router.get('/api/v1/posts', getAllPosts);
+
+// get one post
+router.get('/api/v1/post/:id', getPost);
+
 // post like and unlike route
 router.post('/like-post/:id', postLike);
 // get me route
