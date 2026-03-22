@@ -597,28 +597,21 @@ export const updateUserPassword = async (req: Request, res: Response) => {
 export const deleteUserProfile = async (req: Request, res: Response) => {
   const { id } = req.params;
   try {
-    // check is auth
     const isAutUserCheck = isAuthUser(req);
     if (!isAutUserCheck) {
       return res.status(401).json({ message: "User is not authorized" });
     }
 
-    // find user
     const user = await User.findById(id);
     if (!user) {
       return res.status(404).json({ message: "User not found!" });
     }
 
-    // delete all messages by user
     await Message.deleteMany({ sender: id });
-
-    // delete all chats where user is a member
     await Chat.deleteMany({ members: id });
-
-    // find and delete user
     await User.findByIdAndDelete(id);
 
-    // clear cookie and session
+    // ✅ Only one response, inside the callback
     req.session.destroy((err) => {
       if (err) {
         return res.status(500).json({ message: "Failed to clear session" });
@@ -626,18 +619,16 @@ export const deleteUserProfile = async (req: Request, res: Response) => {
 
       res.clearCookie("sid");
       res.clearCookie("token");
-      return res.json({ message: "Session cleared successfully" });
-    });
-
-    return res.status(200).json({
-      status: "success",
-      message: "User Deleted!"
+      return res.status(200).json({
+        status: "success",
+        message: "User Deleted!"
+      });
     });
 
   } catch (error) {
-    res.status(500).json({ message: "Internal server error" });
+    return res.status(500).json({ message: "Internal server error" });
   }
-}
+};
 
 export const postForgotPassword = async(req: Request, res: Response) => {
   const {email} = req.body;

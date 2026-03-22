@@ -49,7 +49,7 @@ function showMessage(message, color) {
     }, 3000);
 }
 
-// ✅ Reset edit form helper
+// Reset edit form helper
 function resetEditForm() {
     editInputText.value = "";
     previwEditImage.src = "";
@@ -165,7 +165,6 @@ async function getAllPosts() {
                 const postEditButton = postWrapper.querySelector(`#post-edit-delete-wrapper-${post._id} .edit`);
                 const postDeleteBtn = postWrapper.querySelector(`#post-edit-delete-wrapper-${post._id} .delete`);
                 const deleteWindowContainer = document.getElementById("delete-window-wrapper");
-                const deletePost = document.querySelector("#post-delete-wrapper .delete");
                 const closeDeleteWindow = document.querySelector("#post-delete-wrapper .close");
                 const closePostEdit = document.getElementById("close-edit");
 
@@ -178,7 +177,8 @@ async function getAllPosts() {
                 window.addEventListener("click", (e) => {
                     if (
                         window.getComputedStyle(postEditDeleteWrapper).display !== "none" &&
-                        e.target.contains(postEditDeleteWrapper)
+                        !postEditDeleteWrapper.contains(e.target) &&
+                        !postOptions.contains(e.target)
                     ) {
                         postEditDeleteWrapper.style.display = "none";
                     }
@@ -188,6 +188,28 @@ async function getAllPosts() {
                 postDeleteBtn.addEventListener("click", () => {
                     deleteWindowContainer.style.display = "grid";
                     postEditDeleteWrapper.style.display = "none";
+
+                    // ✅ Clone delete button to remove stacked listeners
+                    const deletePost = document.querySelector("#post-delete-wrapper .delete");
+                    const freshDeletePost = deletePost.cloneNode(true);
+                    deletePost.replaceWith(freshDeletePost);
+
+                    // Confirm delete
+                    freshDeletePost.addEventListener("click", async (e) => {
+                        e.preventDefault();
+                        try {
+                            const res = await fetch(`/post-delete/${post._id}`, {
+                                method: "DELETE",
+                                credentials: "include"
+                            });
+                            if (!res.ok) throw new Error("Post not deleted!");
+                            deleteWindowContainer.style.display = "none";
+                            postWrapper.remove();
+                            showMessage("Post deleted successfully", "green");
+                        } catch (error) {
+                            showMessage("Post not deleted!", "#ff4444");
+                        }
+                    });
                 });
 
                 // Close delete window
@@ -195,27 +217,9 @@ async function getAllPosts() {
                     deleteWindowContainer.style.display = "none";
                 });
 
-                // Confirm delete
-                deletePost.addEventListener("click", async (e) => {
-                    e.preventDefault();
-                    try {
-                        const res = await fetch(`/post-delete/${post._id}`, {
-                            method: "DELETE",
-                            credentials: "include"
-                        });
-                        if (!res.ok) throw new Error("Post not deleted!");
-                        deleteWindowContainer.style.display = "none";
-                        postWrapper.remove();
-                        showMessage("Post deleted successfully", "green");
-                    } catch (error) {
-                        showMessage("Post not deleted!", "#ff4444");
-                    }
-                });
-
                 // ✅ Open edit modal — load post data
                 postEditButton.addEventListener("click", async () => {
                     try {
-                        // Reset form before loading
                         resetEditForm();
 
                         const res = await fetch("/api/v1/post/" + post._id);
@@ -225,12 +229,10 @@ async function getAllPosts() {
                         }
                         const postData = await res.json();
 
-                        // ✅ Populate text
                         if (postData.post.text) {
                             editInputText.value = postData.post.text;
                         }
 
-                        // ✅ Populate existing image preview
                         if (postData.post.image) {
                             previwEditImage.src = postData.post.image;
                             previewEditWrapper.style.display = "block";
@@ -239,23 +241,20 @@ async function getAllPosts() {
                         editPostMainContainer.style.display = "block";
                         postEditDeleteWrapper.style.display = "none";
 
-                        // ✅ Clone submit button to remove stacked listeners
+                        // Clone submit button to remove stacked listeners
                         const submitEditPost = document.getElementById("post-edit-btn");
                         submitEditPost.replaceWith(submitEditPost.cloneNode(true));
                         const freshSubmitBtn = document.getElementById("post-edit-btn");
 
-                        // ✅ Submit edit, send form and edit post
                         freshSubmitBtn.addEventListener("click", async (e) => {
                             e.preventDefault();
                             try {
                                 const formData = new FormData();
 
-                                // ✅ Append text if exists
                                 if (editInputText.value.trim()) {
                                     formData.append("text", editInputText.value.trim());
                                 }
 
-                                // ✅ Append new image file if user selected one
                                 if (editImageInput.files[0]) {
                                     formData.append("image", editImageInput.files[0]);
                                 }
@@ -270,7 +269,6 @@ async function getAllPosts() {
 
                                 const updatedPost = await res.json();
 
-                                // ✅ Update UI without full page reload
                                 const postTitle = postWrapper.querySelector(".post-title");
                                 const postImage = postWrapper.querySelector(".post-user img");
 

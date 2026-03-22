@@ -160,9 +160,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
             // if click window outside menu toggle, close toglle menu
             window.addEventListener("click", (event)=>{
-                if(!event.target.contains(section2Container) && !event.target.contains(menuToggle)){
-                    section2Container.style.display ="none"
+                const isMobile = window.innerWidth <= 768;
+                if(isMobile){
+                    if(!event.target.contains(section2Container) && !menuToggle.contains(event.target)){
+                        section2Container.style.display ="none"
+                    }
                 }
+
             })
         });
 });
