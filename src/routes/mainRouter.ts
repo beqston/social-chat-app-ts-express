@@ -3,7 +3,7 @@ import path from "path";
 import User from "../model/user.ts";
 import isAuthUser, { tokenExpires } from "../middleware/auth.ts";
 import userValidation, { passwordRules } from "../utils/userValidation.ts";
-import { getChats, getLogin, getMe, getMessage, getUsers, logout, postMessage, postLogin, postUser, createChat, getAllPMMessage, getMessagesCount, deleteMessage, updateMessage, deleteChat, markAsSeen, updateUserPassword, deleteUserProfile, postForgotPassword, postResetPassword, postProfileImage, deleteProfileImage, postSearchUser, createNewPost, getAllPosts, postComment, getPostComments, getOtherUserProfile, getMyProfile, postLike, editComment, deleteComment, deletePost, editPost, getPost } from "../controlers/userControlers.ts";
+import { getChats, getLogin, getMe, getMessage, getUsers, logout, postMessage, postLogin, postUser, createChat, getAllPMMessage, getMessagesCount, deleteMessage, updateMessage, deleteChat, markAsSeen, updateUserPassword, deleteUserProfile, postForgotPassword, postResetPassword, postProfileImage, deleteProfileImage, postSearchUser, createNewPost, getAllPosts, postComment, getPostComments, getOtherUserProfile, getMyProfile, postLike, editComment, deleteComment, deletePost, editPost, getUserPosts } from "../controlers/userControlers.ts";
 import jwt from "jsonwebtoken"
 import isActive from "../middleware/isActive.ts";
 import uploadSingleImage from "../utils/multer";
@@ -227,8 +227,8 @@ router.get('/api/v1/chats', getChats);
 // post api, get all post
 router.get('/api/v1/posts', getAllPosts);
 
-// get one post
-router.get('/api/v1/post/:id', getPost);
+// get users's posts
+router.get('/api/v1/users-post/:id', getUserPosts);
 
 // post like and unlike route
 router.post('/like-post/:id', postLike);

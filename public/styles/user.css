@@ -1,20 +1,21 @@
 main{
-    display: flex;
-    height: 90dvh;
-    justify-content: center;
+    display: grid;
+    grid-template-columns: 1fr;
     background-color: white;
 }
 
 /* user profile main container */
 #user{
     width: 50%;
-    padding: 2rem;
+    height: fit-content;
+    padding: 1rem;
     display: flex;
     flex-direction: column;
     align-items: center;
     background-color: whitesmoke;
     margin: 0 auto;
     border-radius: 12px;
+    border: 2px solid red;
 }
 
 #user h2{
@@ -36,4 +37,62 @@ main{
     font-weight: 300;
     font-size: 18px;
     line-height: 40px;
+}
+
+#user-posts{
+    background-color: ghostwhite;
+    width: 50%;
+    margin: 0 auto;
+    padding-top: 12px;
+}
+
+.user-post-wrapper{
+    width: 100%;
+    padding: 1rem;
+    background-color: rgba(53, 173, 253, 0.892);
+    border: 2px solid gray;
+    color: white;
+    display: flex;
+    column-gap: 20px;
+
+}
+.user-posts-content{
+    display: flex;
+    flex-direction: column;
+}
+.user-posts-content img{
+    max-width: 480px;
+    height: fit-content;
+}
+.profile-image{
+    width: 40px;
+    height: 40px;
+}
+.profile-photo{
+    width: 120px;
+    height: 120px;
+    font-size: 3rem;
+}
+
+.profile-image, .profile-photo{
+    border-radius: 50%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background-color: green;
+}
+
+.error{
+    color: red;
+}
+
+.not-found{
+    text-align: center;
+    padding: 2rem;
+}
+
+@media screen and (max-width:768px) {
+    #user, #user-posts{
+        width: 100%;
+    }
 }

@@ -135,6 +135,7 @@ document.addEventListener('DOMContentLoaded', () => {
                             </div>
                             <a href="/chat/${user._id}"><img src="/images/header/message.png" alt="Message" /></a>
                         </div>
+                        <div><a href="/user/${user._id}">View Profile</a></div>
                     </div>
                 `).join("");
             }

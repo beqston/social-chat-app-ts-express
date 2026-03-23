@@ -9,6 +9,10 @@
     overflow: auto;
     border: 2px solid skyblue;
     padding: 12px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
 }
 
 .profile-image{

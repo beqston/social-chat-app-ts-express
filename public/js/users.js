@@ -76,6 +76,7 @@ async function getUsers() {
                     <p>${user.lastActiveAgo}</p>
                 </div>
                 <button class="send-message-btn"><img src="/images/header/message.png" alt="Message" /></button>
+                <div><a href="/user/${user._id}">View Profile</a></div>
             `;
 
             // Attach click listener to this button

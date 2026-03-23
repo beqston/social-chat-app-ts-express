@@ -882,18 +882,18 @@ export const getAllPosts = async (req: Request, res: Response) => {
   }
 };
 
-export const getPost = async (req: Request, res: Response) =>{
+export const getUserPosts = async (req: Request, res: Response) =>{
   const {id} = req.params
   try {
-    const post = await Post.findById(id);
+    const posts = await Post.find({user:id});
 
-    if(!post){
+    if(!posts){
       return res.status(404).json({
         message:"Post not found!!"
       })
     }
 
-    res.status(200).json({post})
+    res.status(200).json({posts})
     
   } catch (error) {
     res.status(500).json("Interval server error!!")
